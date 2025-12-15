@@ -98,3 +98,10 @@ learning about:
 
 Next:
 - set up git/vscode to track changes
+- create models for other sections (give raw notes to agent to organize)
+--- each section agent is a character
+------ Timeline : Midori
+------ Gameplay : Ahnya
+------ Novel : Karmedus
+------ Story_Lore : Aeyzul
+------ Themes : Lex
