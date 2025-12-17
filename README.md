@@ -66,10 +66,9 @@ custom AI, takes all notes and organize story details into components
 - input: story/world building notes
 - output: 
 -1- chronological timeline (events), 
--2- readable cohesive novel with dynamic suggestions (story telling devices [conflict/climax/resolution, foreshadowing, plot twists, symbolism, etc.]
+-2- readable cohesive novel with dynamic suggestions (story telling devices [conflict/climax/resolution, foreshadowing, plot twists, symbolism, themes, etc.)
 -3- tracker of characters/events(major)/locations details/traits
--4- plot points and buildup events, with themes and important messages
--5- helper for combining/flowing narrative & creative gameplay mechanics
+-4- helper for combining/flowing narrative & creative gameplay mechanics
 
 
 Today:
@@ -101,7 +100,67 @@ Next:
 - create models for other sections (give raw notes to agent to organize)
 --- each section agent is a character
 ------ Timeline : Midori
------- Gameplay : Ahnya
+------ Gameplay : Lex
 ------ Novel : Karmedus
------- Story_Lore : Aeyzul
------- Themes : Lex
+------ Story_Lore : Ahnya
+
+
+
+12/16/25
+
+
+Finishing engineering preompts for each model/section
+
+Next:
+- learn how to create a "source of thruth" (SoT)
+--- a document that stores json-structured data for each character, item, location, & event
+--- prompting models to structure json and populate SoT
+--- then, parsing the json when interacting with user
+
+
+-------------
+
+
+SoT
+- runs in main
+--- takes/merges text from data/raw_notes into a single SoT document
+--- organizes info into json formatting for models to understand
+- models pull from SOT
+
+
+
+establishing section-particular features (novel - text to speech reading)
+
+learn about:
+- streamlit (python)
+
+
+was able to create json templaate for novel input
+
+
+finished engineering prompts for these models:
+- Timeline
+- Novel
+- Lore
+
+-------------
+
+Next:
+- research how gamemechanics can be an extension of narrative
+--- what makes mechanics fun and engaging
+--- how to stay in sync with narritive
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
