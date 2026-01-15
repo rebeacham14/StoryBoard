@@ -1,25 +1,26 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Home } from './home/home';
+
+// import local components
+import { DashView } from './dashboard/dash-view/dash-view';
+
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Home],
+  imports: [RouterOutlet, DashView],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class App {
-  protected readonly title = signal('Storyboard');
-
-  section =signal("Assistant");
-
-  newPprompt = ""
 
 
-  parentVariable = '';
+  // isAuthenticated = false; // Placeholder for authentication status
 
-
-
-
+  toggleSidebar() {
+  //   const sidebar = document.getElementById('sideBar');
+  //   if (sidebar) {
+  //     this.isActive = !this.isActive
+  //   }
+  }
 
 }
