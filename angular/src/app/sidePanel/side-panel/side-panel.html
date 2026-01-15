@@ -1,0 +1,106 @@
+  <div class="side-panel" [class.hidden-panel]="!sidePanelVisible" >
+  <!-- <div class="off-screen-menu"> -->
+    <!-- <button class="hamburger-menu"><i class="fa fa-bars"></i></button> -->
+    <div class="side-nav">
+      
+      <div class="side-header">
+        <div class="side-title"> My Board </div>
+
+        <button class="hide-btn" [class.hidden-btn]="!sidePanelVisible" (click)="hideSidePanel()">
+          {{ sidePanelVisible ? '<--' : '-->' }}
+        </button>
+      </div>
+
+        <div class="side-options">
+            <button id="newProject">New Project</button>
+            <button id="search">Search</button>
+        </div>
+
+        <div class="scope-options">
+          <div class="sub-header" aria-expanded="false">Scope</div>
+          
+          <div class="scope-buttons">
+            <button class="scope-btn" (click)="toggleProjectScope()">Project</button>
+            <button class="scope-btn" (click)="toggleNotesScope()">Notes</button>
+          </div>
+        </div>
+
+
+        <div class="scope-scroll-container">
+          @if(projectView) {
+          <div class="projectView">
+
+            <div class="list section">
+              <span class="sub-header" aria-expanded="false">Sections</span>
+        
+              <ul class="list-content section" (click)="selectSection('HOME')">
+                HOME
+              </ul>
+
+              <ul class="list-content section" (click)="selectSection('GAMEPLAY')">
+                GAMEPLAY
+              </ul>
+
+              <ul class="list-content section" (click)="selectSection('LORE')">
+                LORE
+              </ul>
+
+              <ul class="list-content section" (click)="selectSection('NOVEL')">
+                NOVEL
+              </ul>
+
+              <ul class="list-content section" (click)="selectSection('SCREENPLAY')">
+                SCREENPLAY
+              </ul>
+
+              <ul class="list-content section" (click)="selectSection('TIMELINE')">
+                TIMELINE
+              </ul>
+
+            </div>
+
+
+            <div class="list projects">
+              <span class="sub-header" aria-expanded="false">Projects</span>
+              
+              <ul class="list-content project" (click)="selectProject('THE_CORE')">
+                The Core
+              </ul>
+
+              <ul class="list-content project" (click)="selectProject('BOLITITY')">
+                Bolitity
+              </ul>
+            </div>
+
+          </div>
+          }
+
+
+          @if(notesView) {
+          <div class="notesView">
+
+            <div class="list recent-notes">
+              <span class="sub-header" aria-expanded="false">Recent Notes</span>
+              
+              <ul class="list-content recent-notes">
+                  GAMEPLAY: "mechanic about flying"
+              </ul>
+              
+              <ul class="list-content recent-notes">
+                  LORE: "changed Ty's name"
+              </ul>
+              
+            </div>
+
+
+          </div>
+          }
+
+
+        </div>
+
+
+
+
+    </div>
+  </div>
