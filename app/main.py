@@ -1,3 +1,5 @@
+# App Ideas:
+
 # runs when app opens
 # loads notes (SoT for models to pull from)
 # displays editing raw notes (manual w/ minimal AI)
@@ -26,10 +28,11 @@ import json
 import sys
 import os
 
+# models' systems & instructions
+import model_systems
+
+
 ###############################
-
-
-
 
 # Get the absolute path of the directory containing 'app_sections'
 # In this case, 'app' directory
@@ -38,9 +41,8 @@ parent_dir = os.path.dirname(current_dir)
 # Append the project root to sys.path
 sys.path.append(current_dir)
 
+###############################
 
-# models' systems & instructions
-import model_systems
 
 # get system + instruction designs
 assistant_system = model_systems.getSystem("assistant")
@@ -61,8 +63,17 @@ screenplay_instructions = model_systems.getInstructions("screenplay")
 timeline_system = model_systems.getSystem("timeline")
 timeline_instructions = model_systems.getInstructions("timeline")
 
+placeholder_prompt = """You are an expert product information extractor.
+Your task is to extract product details from the user's input.
+YOU MUST output a single, strictly valid JSON object that conforms to the provided schema.
+Do not add any introductory or explanatory text outside the JSON.
+"""
+###############################
 
 
+class AssistantResponse(BaseModel):
+    section: str
+    response: str
 
 
 app = FastAPI()
@@ -81,110 +92,328 @@ app.add_middleware(
 )
 
 
-# class Response(BaseModel):
-#     section: str
-#     response : str
-
-
 @app.post("/assistant")
-def generate(prompt: str):
+def generate(userContent: str):
     
     # add instructions with user input
-    final_input = f"{assistant_instructions} \n {prompt}"
+    final_input = f"{assistant_instructions} : {userContent}"
 
     # feed model the final input
-    response = ollama.chat(model="mistral", options={"temperature": 0.5}, messages=[{'role': 'system', 'content': assistant_system}, {"role": "user","content": final_input}], format='json')
-    
-    # parse model response to retrieve SECTION & RESPONSE 
+    response = ollama.chat(
+        model="mistral", 
+        options={"temperature": 0.5}, 
+        messages=[
+            {'role': 'system', 'content': assistant_system}, 
+            {"role": "user","content": final_input}
+        ], 
+        format=AssistantResponse.model_json_schema(), # Pass the Pydantic schema here
+    )
     try:
+
         # store ollama response
-        json_string = response["message"]["content"]
+        response_data = AssistantResponse.model_validate_json(response['message']['content'])
         
-        # getSection(prompt)
-
-        # transform response into json data
-        data = json.loads(json_string) # returns [role, content]
-        # pureResponse = data["content"]
-
-
         # separate data --> SECTION & FINAL_RESPONSE
-        section = data.get('section')
-        final_response = data.get('response')
+        section = response_data.section.lower()
+        final_response = response_data.response
 
     # if parsing doesnt work
     except json.JSONDecodeError as e:
         print(f"Failed to decode JSON: {e}")
     
-    # if section is determined, go to it & carry-over user input (prompt)
-    # if(section == None):
-    #     print("Section not found.")
-    #     return final_response
 
     # if section is determined, go to it & carry-over user input (prompt)
-    if(section != "UNCLEAR" and section != None):
+    if(section != "UNCLEAR"):
         print(f"Directing to: {section}. Transferring prompt.")
-        return RedirectResponse(url=f"/{section.lower()}?prompt={prompt}", status_code=302)
-    
+        # return RedirectResponse(url=f"/{section.lower()}?prompt={prompt}", status_code=302)
+        
+        # return message w/o section
+        # return final_response
+
+        # return both message & section
+        return response_data
+
+    # if section none
+    elif(section == None):
+        print("Section not found. Sometheing went wrong.")
+        return ("Section not found. Sometheing went wrong.")
+
     # if section is unclear, prompt to try again
     else:
-        print("direction unclear...\n")
-        return data
+        print("direction unclear. try again.")
+        return ("direction unclear. try again.")
     
-
-# def getSection(response:str):
-#     fullResponse = "Which section does this fall under [GREETING, GAMEPLAY, LORE, NOVEL, SCREENPLAY, OR TIMELINE]:\n" + response + "\nIf more than one category qualifies, respond with [MULTIPLE]. If none apply, respond with [UNCLEAR]. Always respond with only one word, all caps. "
-#     _2ndResponse = ollama.chat(model="mistral", options={"temperature": 0.5}, messages=[{"role": "user","content": fullResponse}], format='json')
-#     return _2ndResponse["message"]
-
 
 
 @app.post("/gameplay")
-def generate(prompt: str):
+def generate(userContent: str):
+
     # add instructions with user input
-    final_input = f"{lore_instructions} \n {prompt}"
-    
+    final_input = f"{gameplay_instructions} : {userContent}"
+
     # feed model the final input
-    response = ollama.chat(model="mistral", options={"temperature": 0.5}, messages=[{'role': 'system', 'content': lore_system}, {"role": "user","content": final_input}], format='json')
+    response = ollama.chat(
+        model="mistral", 
+        options={"temperature": 0.5}, 
+        messages=[
+            {'role': 'system', 'content': gameplay_system}, 
+            {"role": "user","content": final_input}
+        ], 
+        format=AssistantResponse.model_json_schema(), # Pass the Pydantic schema here
+    )
+    try:
+
+        # store ollama response
+        response_data = AssistantResponse.model_validate_json(response['message']['content'])
+        
+        # separate data --> SECTION & FINAL_RESPONSE
+        section = response_data.section.lower()
+        final_response = response_data.response
+
+    # if parsing doesnt work
+    except json.JSONDecodeError as e:
+        print(f"Failed to decode JSON: {e}")
+    
+
+    # if section is determined, go to it & carry-over user input (prompt)
+    if(section != "UNCLEAR"):
+        print(f"Directing to: {section}. Transferring prompt.")
+        # return RedirectResponse(url=f"/{section.lower()}?prompt={prompt}", status_code=302)
+        
+        # return message w/o section
+        # return final_response
+
+        # return both message & section
+        return response_data
+
+    # if section none
+    elif(section == None):
+        print("Section not found. Sometheing went wrong.")
+        return ("Section not found. Sometheing went wrong.")
+
+    # if section is unclear, prompt to try again
+    else:
+        print("direction unclear. try again.")
+        return ("direction unclear. try again.")
+    
 
 
 @app.post("/lore")
-def generate(prompt: str):
+def generate(userContent: str):
 
     # add instructions with user input
-    final_input = f"{lore_instructions} \n {prompt}"
-    
+    final_input = f"{lore_instructions} : {userContent}"
+
     # feed model the final input
-    response = ollama.chat(model="mistral", options={"temperature": 0.5}, messages=[{'role': 'system', 'content': lore_system}, {"role": "user","content": final_input}], format='json')
+    response = ollama.chat(
+        model="mistral", 
+        options={"temperature": 0.5}, 
+        messages=[
+            {'role': 'system', 'content': lore_system}, 
+            {"role": "user","content": final_input}
+        ], 
+        format=AssistantResponse.model_json_schema(), # Pass the Pydantic schema here
+    )
+    try:
+
+        # store ollama response
+        response_data = AssistantResponse.model_validate_json(response['message']['content'])
+        
+        # separate data --> SECTION & FINAL_RESPONSE
+        section = response_data.section.lower()
+        final_response = response_data.response
+
+    # if parsing doesnt work
+    except json.JSONDecodeError as e:
+        print(f"Failed to decode JSON: {e}")
     
 
+    # if section is determined, go to it & carry-over user input (prompt)
+    if(section != "UNCLEAR"):
+        print(f"Directing to: {section}. Transferring prompt.")
+        # return RedirectResponse(url=f"/{section.lower()}?prompt={prompt}", status_code=302)
+        
+        # return message w/o section
+        # return final_response
 
+        # return both message & section
+        return response_data
+
+    # if section none
+    elif(section == None):
+        print("Section not found. Sometheing went wrong.")
+        return ("Section not found. Sometheing went wrong.")
+
+    # if section is unclear, prompt to try again
+    else:
+        print("direction unclear. try again.")
+        return ("direction unclear. try again.")
+    
 
 
 @app.post("/novel")
-def generate(prompt: str):
+def generate(userContent: str):
+
     # add instructions with user input
-    final_input = f"{lore_instructions} \n {prompt}"
-    
+    final_input = f"{novel_instructions} : {userContent}"
+
     # feed model the final input
-    response = ollama.chat(model="mistral", options={"temperature": 0.5}, messages=[{'role': 'system', 'content': lore_system}, {"role": "user","content": final_input}], format='json')
+    response = ollama.chat(
+        model="mistral", 
+        options={"temperature": 0.5}, 
+        messages=[
+            {'role': 'system', 'content': novel_system}, 
+            {"role": "user","content": final_input}
+        ], 
+        format=AssistantResponse.model_json_schema(), # Pass the Pydantic schema here
+    )
+    try:
+
+        # store ollama response
+        response_data = AssistantResponse.model_validate_json(response['message']['content'])
+        
+        # separate data --> SECTION & FINAL_RESPONSE
+        section = response_data.section.lower()
+        final_response = response_data.response
+
+    # if parsing doesnt work
+    except json.JSONDecodeError as e:
+        print(f"Failed to decode JSON: {e}")
+    
+
+    # if section is determined, go to it & carry-over user input (prompt)
+    if(section != "UNCLEAR"):
+        print(f"Directing to: {section}. Transferring prompt.")
+        # return RedirectResponse(url=f"/{section.lower()}?prompt={prompt}", status_code=302)
+        
+        # return message w/o section
+        # return final_response
+
+        # return both message & section
+        return response_data
+
+    # if section none
+    elif(section == None):
+        print("Section not found. Sometheing went wrong.")
+        return ("Section not found. Sometheing went wrong.")
+
+    # if section is unclear, prompt to try again
+    else:
+        print("direction unclear. try again.")
+        return ("direction unclear. try again.")
+    
+
 
 @app.post("/screenplay")
-def generate(prompt: str):
+def generate(userContent: str):
+
     # add instructions with user input
-    final_input = f"{screenplay_instructions} \n {prompt}"
-    
+    final_input = f"{screenplay_instructions} : {userContent}"
+
     # feed model the final input
-    response = ollama.chat(model="mistral", options={"temperature": 0.5}, messages=[{'role': 'system', 'content': screenplay_system}, {"role": "user","content": final_input}], format='json')
+    response = ollama.chat(
+        model="mistral", 
+        options={"temperature": 0.5}, 
+        messages=[
+            {'role': 'system', 'content': screenplay_system}, 
+            {"role": "user","content": final_input}
+        ], 
+        format=AssistantResponse.model_json_schema(), # Pass the Pydantic schema here
+    )
+    try:
+
+        # store ollama response
+        response_data = AssistantResponse.model_validate_json(response['message']['content'])
+        
+        # separate data --> SECTION & FINAL_RESPONSE
+        section = response_data.section.lower()
+        final_response = response_data.response
+
+    # if parsing doesnt work
+    except json.JSONDecodeError as e:
+        print(f"Failed to decode JSON: {e}")
+    
+
+    # if section is determined, go to it & carry-over user input (prompt)
+    if(section != "UNCLEAR"):
+        print(f"Directing to: {section}. Transferring prompt.")
+        # return RedirectResponse(url=f"/{section.lower()}?prompt={prompt}", status_code=302)
+        
+        # return message w/o section
+        # return final_response
+
+        # return both message & section
+        return response_data
+
+    # if section none
+    elif(section == None):
+        print("Section not found. Sometheing went wrong.")
+        return ("Section not found. Sometheing went wrong.")
+
+    # if section is unclear, prompt to try again
+    else:
+        print("direction unclear. try again.")
+        return ("direction unclear. try again.")
+    
 
 
 @app.post("/timeline")
-def generate(prompt: str):
-    # add instructions with user input
-    final_input = f"{lore_instructions} \n {prompt}"
-    
-    # feed model the final input
-    response = ollama.chat(model="mistral", options={"temperature": 0.5}, messages=[{'role': 'system', 'content': lore_system}, {"role": "user","content": final_input}], format='json')
+def generate(userContent: str):
 
+    # add instructions with user input
+    final_input = f"{timeline_instructions} : {userContent}"
+
+    # feed model the final input
+    response = ollama.chat(
+        model="mistral", 
+        options={"temperature": 0.5}, 
+        messages=[
+            {'role': 'system', 'content': timeline_system}, 
+            {"role": "user","content": final_input}
+        ], 
+        format=AssistantResponse.model_json_schema(), # Pass the Pydantic schema here
+    )
+    try:
+
+        # store ollama response
+        response_data = AssistantResponse.model_validate_json(response['message']['content'])
+        
+        # separate data --> SECTION & FINAL_RESPONSE
+        section = response_data.section.lower()
+        final_response = response_data.response
+
+    # if parsing doesnt work
+    except json.JSONDecodeError as e:
+        print(f"Failed to decode JSON: {e}")
+    
+
+    # if section is determined, go to it & carry-over user input (prompt)
+    if(section != "UNCLEAR"):
+        print(f"Directing to: {section}. Transferring prompt.")
+        # return RedirectResponse(url=f"/{section.lower()}?prompt={prompt}", status_code=302)
+        
+        # return message w/o section
+        # return final_response
+
+        # return both message & section
+        return response_data
+
+    # if section none
+    elif(section == None):
+        print("Section not found. Sometheing went wrong.")
+        return ("Section not found. Sometheing went wrong.")
+
+    # if section is unclear, prompt to try again
+    else:
+        print("direction unclear. try again.")
+        return ("direction unclear. try again.")
+    
+
+
+
+
+
+# App Flow Ideas:
 
 # -- with every /generate... comes a systems Agent
 
