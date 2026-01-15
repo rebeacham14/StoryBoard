@@ -1,0 +1,73 @@
+<div class="chat-container" [class.hidden-chat]="!chatVisible">
+
+    @if(chatVisible) {
+    <div>
+        @if(!notepadView) {
+        <div class="scroll-container">
+            @for (message of allMessages; track message._id) {
+            <div class="user-message">
+                {{ message.userContent }}
+            </div>
+            <div class="ai-message">
+                {{  message.aiContent  }}
+            </div>
+            }
+        </div>
+
+        <div class="hint-message">
+            Tell me about the story idea you have.
+            <br/>
+            It can be anything from information about a character, to the design of an important landmark in the world!
+        </div>
+        <div class="input-container">
+            
+            <!-- <label for="section">Choose a level:</label> -->
+            <select id="section-select" name="section" >
+                <option value="HOME" default>-- -- </option>
+                <option value="LORE">Lore</option>
+                <option value="GAMEPLAY">Gameplay</option>
+                <option value="NOVEL">Novel</option>
+                <option value="SCREENPLAY">Screenplay</option>
+                <option value="TIMELINE">Timeline</option>
+            </select>
+
+
+            <input id="userInput" type="text" #userInput id="userInput" placeholder="Adventure, Horror, Fantasy??">
+            <button id="sendButton" (click)="onSend(userInput.value)">Send</button>
+        </div>
+
+        <button class="load-button" (click)="loadChat()">
+            Load Chat
+        </button>
+
+        <button class="make-dash-text-btn" (click)="makeDashText()" [class.disabled-btn]="!canMakeDashText">
+            Send To Dashboard
+        </button>
+
+        }
+        @if(notepadView) {
+        <div class="note-pad-container">
+            <textarea class="note-pad-textarea" #notePadTextarea type="text" placeholder="Enter your notes here..."> </textarea>
+            <!-- 
+            <button class="save-note-button" (click)="saveNotePadData(notePadTextarea.value)">
+                Save Notes
+            </button>  
+            -->
+        </div>
+        }
+
+        <!-- 
+        <button class="note-pad-button" (click)="toggleNotePad()">
+            {{ notepadView ? 'Chat View' : 'Notes View' }}
+        </button> 
+        -->
+
+    </div>
+    }
+    
+    <button class="hide-button" (click)="hideChat()">
+        {{ chatVisible ? 'Hide' : 'Show' }}
+    </button>
+
+
+</div>
