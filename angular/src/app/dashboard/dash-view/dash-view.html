@@ -1,0 +1,73 @@
+<app-side-panel (onSelectSectionEvent)="handleSectionChange($event)"></app-side-panel> <!-- side panel -->
+
+<app-chat (onSectionDirectionEvent)="handleSectionDirection($event)" (onMakeDashTextEvent)="handleMakeDashText($event)"></app-chat> <!-- chat panel -->
+
+
+<div class="all-dashboard-container">
+  
+  <div class="current-section-title">
+    <h1>{{ currentSection }}</h1>
+  </div>
+
+  <div class="button-container">
+    <button class="load-button" (click)="loadDashboardItems()">
+      Load Dash
+    </button>
+
+    <button class="delete-button" (click)="unlockDeleteDashElement()">
+      Delete
+    </button>
+  </div>
+
+  <div class="dashboard"
+    [id]="dashboardContainerId"
+    cdkDropList
+    [cdkDropListData]="widgetItems"
+    [cdkDropListConnectedTo]="[widgetContainerId]"
+    (cdkDropListDropped)="drop($event)"
+  >
+
+    <h2>Dashboard Items</h2>
+    @for (item of dashboardItems; track item._id) {
+      <div class="dashboardWidgetItem" cdkDrag>
+        <span> {{item.title}} </span>
+      </div>
+    }
+  </div> 
+
+
+  <!-- widget panel import -->
+  <app-widget-panel></app-widget-panel> <!-- widget panel -->      
+
+
+  @for (item of dashboardItems; track item._id) {
+    <div class="dashElement" #textbox_container cdkDrag>
+      <div class="drag-handle" cdkDragHandle>
+        @if(deleteMode) {
+          <button id="delete" (click)="deleteDashElement(item._id)">
+            Delete
+          </button>
+        }
+
+        <span>{{item.title}}</span>
+  
+        <button id="hide" (click)="hideDashElement(item._id)">
+          {{ item.visible ? 'Hide' : 'Show' }}
+        </button>      
+      </div>
+
+      @if(item.visible) {
+        <textarea class="userInput" #myTextarea type="text" placeholder="Enter text">{{item.data}}</textarea>
+        <button id="save" (click)="saveElementData(item._id, myTextarea.value)">
+          Save
+        </button>
+  }
+
+    </div>
+  }
+
+</div>
+
+
+
+
