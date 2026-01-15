@@ -1,0 +1,107 @@
+.widget-panel{
+  background-color: rgba(201, 198, 241, 0.705);
+  
+  display: flex;
+  flex-direction: column; /* Stacks items vertically */
+
+  position: fixed;
+  top: 150px;
+  right: 30px;
+
+  padding: 10px;
+
+  border-radius: 20px;
+
+  z-index: 500;
+
+}
+
+/* .widget-container {
+
+} */
+
+.widget-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin: 0 20px;
+}
+
+
+.hide-button {
+    cursor: pointer;
+
+    align-self: flex-end;
+
+    background-color: rgb(166, 142, 212);
+
+    padding: 5px 10px;
+
+    border: none;
+    border-radius: 5px;
+
+    opacity: 1; 
+    transition: opacity 0.3s ease
+}
+
+.hide-button:hover {
+    opacity: 0.5; 
+}
+
+
+/* .widget-list{
+
+} */
+
+
+.widgetPannelItem {
+  cursor: grab;
+
+  border: 1px solid #000000;
+  margin-bottom: 5px;
+
+  padding: 5px;
+  background: white;
+  
+}
+
+
+.widgetPannelItem .drag-icon{
+  margin-right: 20px;
+}
+
+
+
+.cdk-drag-placeholder {
+  opacity: 0.5;
+  background: #ccc;
+  border: dotted 3px #999;
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.drag-handle {
+  cursor: grab;
+  
+  display: flex;
+  justify-content: space-between;
+
+  background-color: #f0f0f0;
+  padding: 2px 5px;
+  border-bottom: 1px solid #ccc;
+
+}
+
+.dashElement input {
+  border: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cdk-drag-dragging {
+  opacity: 0.7;
+}
