@@ -1,0 +1,79 @@
+* {
+ box-sizing: border-box;
+ margin: 0;
+ padding: 0;
+}
+
+body {
+ font-family: Arial, sans-serif;
+}
+
+/* Nav Bar */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+    background-color: #343a40;
+    padding: 0 20px;
+    margin-bottom: 100px;
+
+    z-index: 1000;
+}
+
+/* .hamburger-menu {
+    display: block;
+    font-size: 30px;
+    padding: 5px;
+
+    transform: rotate(90deg);
+
+    cursor: pointer;
+} */
+
+.ham-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 25px;
+    cursor: pointer;
+}
+
+
+.navbar-title {
+    font-size: 30px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+}
+
+
+.hamburger-menu {
+ cursor: pointer;
+}
+
+.sign-in-button {
+    background-color: darkgrey;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+
+    cursor: pointer;
+
+    opacity: 1; 
+    transition: opacity 0.2s ease
+}
+
+.sign-in-button:hover {
+    opacity: 0.5; 
+}
+
+
