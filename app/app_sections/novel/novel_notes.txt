@@ -1,0 +1,51 @@
+
+?? what is the user on this section to acomplish
+- organize/ outline overlaying structure
+- user can choose mix between organize style (plotter vs pantser | plantser) (The Snowflake Method) 
+- use style to connect events with structure outline (fluidity and cohesion)
+- visual displays plot points and buildup events that emphasize themes and important messages
+- determine how themes explore a greater message (throughout novel & series)
+- can edit character quotes, arcs, and scenes
+- research within the world SoT questions (AI prompting)
+- hear full story draft (text-to-speech reading)
+
+___________________
+
+
+implement a beat board?
+
+
+have buttons to toggel for the following assistance (queue docking):
+- Brainstorming & Development
+- Drafting & Writing Support
+- Editing & Revision
+- Organization & Management 
+
+
+Automate routine and time-consuming tasks, allow user to dedicate more creative energy to storytelling and character development
+
+
+
+My idea is to create a number of books that explore the same window of time (more or less), but all contain different themes and focuses. 
+For example: 
+- book one will emphasize certain events and characters, set up details to be later mentioned, and lead to a certain ending; 
+- book 2 will include certain details from the past book that help explore new important events and characters, ending with a different outlook/perspective on the same ending as the previous book;
+- book 3 will pull from both book 1 and 2 while having its own unique take on the , and so on and so forth throughout the series. 
+This will lead to an astonishing reveal that the themes and endings were all connected and there were easter-eggs along the way hinting to the plot twist.
+These novels will be gateways for readers into my original immersive world, create emotional connections, and explore compelling narratives and relateable characters.
+"""
+
+
+
+
+
+Prompt Examples for Specific Storytelling Devices
+Here are examples of how to prompt an AI to integrate specific devices dynamically:
+For Plot and Structure (Conflict/Climax/Resolution)
+Outline Generation: "For the novel idea '[Insert your novel idea]', outline a three-act structure that includes the setup, a midpoint shift, and the climax. Ensure escalating conflict and stakes in every section."
+Midpoint Twist: "For the midpoint scene of Chapter [X], generate a major twist that shifts the story's direction and forces the protagonist to rethink their approach. The twist should be rooted in character motivations."
+Climax/Resolution Review: "Analyze the following climax scene [paste text]. Does it resolve all major conflicts and reflect the protagonist's character growth? If not, propose three alternatives that feel earned and align with the established themes."
+For Intentional Storytelling Devices (Foreshadowing, Symbolism)
+Foreshadowing: "Write a paragraph for Chapter [X] that subtly foreshadows the future betrayal by character [Character Name]. Use environmental details or character dialogue to hint at the upcoming twist."
+Symbolism: "In the description of the old lighthouse setting, use symbolism to represent the protagonist's isolation and internal struggle. The imagery should include references to the crashing waves and the dying light."
+Dynamic Suggestions: "Review the current chapter draft [paste text]. Suggest specific points where I can introduce a new subplot, add tension, or deepen character motivations to improve the pacing and raise the stakes."

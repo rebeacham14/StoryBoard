@@ -1,0 +1,45 @@
+
+
+
+this is where the novel json structure goes
+
+
+
+{
+    "series" : "series name",
+    "novels" : [
+        {
+            "title": "Novel Title",
+            "author": "Author Name",
+            "overallMessage": "The central message or theme of the entire novel.",
+            "chapters": [
+                {
+                "chapterNumber": 1,
+                "title": "Chapter One Title",
+                "text": "The full text content of the chapter goes here...",
+                "themes": ["theme 1", "theme 2"],
+                "messages": ["message A", "message B"],
+                "events": [
+                    {
+                    "id": "E001",
+                    "name":"The Dragon's Arrival",
+                    "time": 52, // float type that indicates year
+                    "location": ["City of E", "Tower of R"], // list of locations
+                    "occurrences": "Detailed description of what happens during the event",
+                    "characters": ["C001"], // Can list character/NPC IDs
+                    "items": ["Item X", "Item Y"],
+                    "triggers": ["C001 reaches Oakhaven", "I001 is used"], // list of precedding occurrances that lead to this event
+                    },
+                    // ... more events
+                ]
+                },
+                // ... more chapters
+            ]
+
+        },
+        // ... more novels
+    ]
+
+}
+
+

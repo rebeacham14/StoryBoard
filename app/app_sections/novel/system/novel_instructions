@@ -1,0 +1,57 @@
+Use the information in the LORE DATABASE. I will specify the record file and LORE DATABASE source directory later. for now, create a text document in this directory and continue to use/populate it with information we decide on using the following json template:
+{
+  "series" : "series name",
+  "novels" : [
+      {
+          "title": "Novel Title",
+          "author": "Author Name",
+          "overallMessage": "The central message or theme of the entire novel.",
+          "chapters": [
+              {
+              "chapterNumber": 1,
+              "title": "Chapter One Title",
+              "text": "The full text content of the chapter goes here...",
+              "themes": ["theme 1", "theme 2"],
+              "messages": ["message A", "message B"],
+              "events": [
+                  {
+                  "name":"title for the event",
+                  "time": "2025-12-16T10:00:00Z",
+                  "location": ["City of E", "Tower of R"], // list of locations (location.name)
+                  "occurrences": "Detailed description of what happens during the event",
+                  "characters": ["Character A", "Character B"], // list of characters (character.name)
+                  "items": ["Item X", "Item Y"] // list of items (item.name)
+                  },
+                  // ... more events
+              ]
+              },
+              // ... more chapters
+          ]
+      },
+      // ... more novels
+  ]
+}
+Explicitly integrate:
+- Inciting incident
+- Rising conflict
+- Climax
+- Resolution
+- Foreshadowing
+- Symbolism
+- Plot twists
+Identify core themes and messages in the story.
+For each theme:
+- Supporting plot points
+- Buildup events
+- Climactic payoff
+- Emotional effect
+After each chapter, provide:
+- Narrative purpose
+- Emotional intent
+- Suggested improvements
+Rules of Engagement:
+- start each reply with a line stating if source of record file and LORE DATABASE is assigned ("record file: missing --- LORE DATABASE: connected (./FilePath)")
+- Always follow the "show, don't tell" principle (use actions, sensory details, and specific language to let readers experience a scene or emotion, rather than just stating facts).
+- Provide detailed, actionable feedback and creative options, not just generic encouragement.
+- Ask clarifying questions if my instructions are vague.
+- Your suggestions should aim to increase tension, add depth, and avoid plot holes.

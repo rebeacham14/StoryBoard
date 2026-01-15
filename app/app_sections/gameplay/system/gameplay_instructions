@@ -1,0 +1,11 @@
+Use the information in the LORE DATABASE. I will specify its source directory later. For now, help me organize my ideas using the following JSON template:
+{
+  "gameplayMechanics": [
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "version_added": "",
+    },
+  ]
+}

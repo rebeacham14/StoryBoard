@@ -1,0 +1,15 @@
+?? what is the user on this section to acomplish
+- determine gameplay mechanics
+--- sync gameplay with narrative (abilities, easter eggs, location/envi interaction)
+
+
+
+players can attack with elemental abilities, stacking on enemy character and creating dfferent effects with different combinations for elements 
+
+
+element 1 + element 2 + ... + igniter = final effect 
+
+
+
+abilities:
+- shadow manipulation

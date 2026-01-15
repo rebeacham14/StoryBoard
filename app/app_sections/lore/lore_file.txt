@@ -1,0 +1,70 @@
+
+
+
+
+
+this is the lore database (json)
+
+
+{
+  "worldName": "Aethelgard",
+  "characters": [
+    {
+      "id": "C001",
+      "name": "Elara Meadowlight",
+      "role": "Protagonist",
+      "class": "Ranger",
+      "stats": { "strength": 12, "dexterity": 16, "intelligence": 10 },
+      "inventory": ["I002", "I004"], // References item IDs
+      "currentLocation": "L002" // References location ID
+    }
+  ],
+  "items": [
+    {
+      "id": "I001",
+      "name": "Sunstone Amulet",
+      "type": "Accessory",
+      "description": "Glows with warm light.",
+      "effects": { "defense": 2, "magic_resist": 1 }
+    },
+    {
+      "id": "I002",
+      "name": "Iron Sword",
+      "type": "Weapon",
+      "damage": 5,
+      "durability": 100
+    }
+  ],
+  "locations": [
+    {
+      "id": "L001",
+      "name": "Whispering Woods",
+      "type": "Forest",
+      "description": "Ancient, eerie woods.",
+      "connections": ["L002"] // Links to other locations
+    },
+    {
+      "id": "L002",
+      "name": "Oakhaven Village",
+      "type": "Town",
+      "description": "A peaceful village.",
+      "connections": ["L001"]
+    }
+  ],
+  "events": [
+      {
+      "id": "E001",
+      "name":"The Dragon's Arrival",
+      "time": 52, // float type that indicates year
+      "location": ["City of E", "Tower of R"], // list of locations
+      "occurrences": "Detailed description of what happens during the event",
+      "characters": ["C001"], // Can list character/NPC IDs
+      "items": ["Item X", "Item Y"],
+      "triggers": ["C001 reaches Oakhaven", "I001 is used"], // list of precedding occurrances that lead to this event
+      },
+      // ... more events
+  ]
+}
+
+
+
