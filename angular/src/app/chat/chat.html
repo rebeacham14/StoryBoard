@@ -3,7 +3,7 @@
     @if(chatVisible) {
     <div>
         @if(!notepadView) {
-        <div class="scroll-container">
+        <div class="scroll-container" [class.hidden-scroll]="!messagesVisible">
             @for (message of allMessages; track message._id) {
             <div class="user-message">
                 {{ message.userContent }}
@@ -12,6 +12,12 @@
                 {{  message.aiContent  }}
             </div>
             }
+        </div>
+
+        <div>
+            <button class="hide-messages-button" (click)="toggleMessagesView()">
+                {{ messagesVisible ? 'Hide' : 'Show' }}
+            </button>
         </div>
 
         <div class="hint-message">
@@ -33,15 +39,17 @@
 
 
             <input id="userInput" type="text" #userInput id="userInput" placeholder="Adventure, Horror, Fantasy??">
-            <button id="sendButton" (click)="onSend(userInput.value)">Send</button>
+            <button id="sendButton" class="sendButton" (click)="onSend(userInput.value)" [disabled]="isLoading" [class.loading-btn]="isLoading">
+                {{isLoading ? ' ' : 'Send'}}
+            </button>
         </div>
 
-        <button class="load-button" (click)="loadChat()">
-            Load Chat
+        <button class="update-button" (click)="updateChat()">
+            Load / Update
         </button>
 
         <button class="make-dash-text-btn" (click)="makeDashText()" [class.disabled-btn]="!canMakeDashText">
-            Send To Dashboard
+            Make Dashboard Text
         </button>
 
         }
