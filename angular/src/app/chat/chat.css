@@ -13,7 +13,7 @@ body {
 
 /* Chat Container */
 .chat-container {
-    background-color: #0000009c;
+    background-color: #343a40;
 
     position: fixed;   /* Fixes the element to the viewport */
     bottom: 20px;         /* Aligns the bottom edge with the viewport's bottom */
@@ -49,6 +49,12 @@ body {
     overflow-y: scroll;
     max-height: 200px; /* Adjust based on your design */
     margin-bottom: 10px;
+
+    resize: vertical;
+}
+.hidden-scroll {
+    max-height: 0px;
+    overflow: hidden;
 }
 
 .ai-message {
@@ -62,12 +68,38 @@ body {
 
 .user-message {
     background-color: #7d5ed493;
+
+    color: #b4b1b1;
+
     padding: 10px;
     border-radius: 5px;
     margin-bottom: 10px;
     font-size: 16px;
     max-width: 80%;
 }
+
+.hide-messages-button {
+    cursor: pointer;
+
+    background-color: darkslateblue;
+
+    color: white;
+
+    padding: 5px 10px;
+    margin: 0 0 10px 10px;
+
+    border: none;
+    border-radius: 5px;
+    
+
+    opacity: 1; 
+    transition: opacity 0.3s ease
+
+}
+.hide-messages-button:hover {
+    opacity: 0.5; 
+}
+
 
 .hint-message {
     background-color: #7e7e7e;
@@ -141,7 +173,7 @@ body {
 }
 
 
-#sendButton {
+.sendButton {
     cursor: pointer;
     
     background-color: darkslateblue;
@@ -160,12 +192,16 @@ body {
 
 }
 
-#sendButton:hover {
+.sendButton:hover {
     opacity: 0.5; 
 }
 
+.loading-btn {
+    cursor: not-allowed;
+    background-color: grey;
+}
 
-.load-button {
+.update-button {
     cursor: pointer;
 
     background-color: rgb(166, 142, 212);
@@ -183,7 +219,7 @@ body {
     transition: opacity 0.2s ease
 }
 
-.load-button:hover {
+.update-button:hover {
     opacity: 0.5; 
 }
 
@@ -201,6 +237,17 @@ body {
     transition: opacity 0.3s ease
 
 }
+
+
+.disabled-btn {
+    cursor: not-allowed;
+
+    background-color: grey;
+
+    opacity: 0.6;
+}
+
+
 /* 
 .note-pad-button {
     cursor: pointer;
