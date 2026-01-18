@@ -31,6 +31,33 @@ interface NewDashItem {
   data?: string;
 }
 
+interface UserInputData {
+  section: string;
+  userContent: string;
+  userQueries: string[];
+  last_working_on: string;
+  current_element_content: string;
+}
+
+interface SummaryAnalysis {
+  title: string
+  general_response: string
+  connections: string
+  lore_summary: string
+  gap_suggestions: string
+  new_idea_suggestions: string
+  logic_conflicts: string
+  user_question_responses: string[];
+}
+
+interface MakeDashElementData {
+  user_data: UserInputData
+  ai_data: SummaryAnalysis
+}
+
+
+
+
 
 @Component({
   selector: 'app-dash-view',
@@ -40,10 +67,18 @@ interface NewDashItem {
 })
 export class DashView {
 
+  // backend url
+  url: string = URLS.DASHBOARD;
+  
   // dashboard items 
   dashboardItems : DashboardItem[] = [];
 
-  // A unique ID for the main container is useful for connection logic
+
+
+  // A unique ID for the new items container
+  dashboardContainerId = 'dashboard-list'; 
+  
+  // A unique ID for the main container 
   widgetContainerId = 'widget-list'; 
 
   // list of possible widget items
@@ -51,20 +86,33 @@ export class DashView {
   widgetItems = ['Text'];
 
 
-  // A unique ID for the new items container
-  dashboardContainerId = 'dashboard-list'; 
 
   // delete mode toggle
   deleteMode: boolean = false;
 
+  // backend response accessor
+  responseAccessor: string = 'dashElements';
+
+
+  // toggle AI panel visibility
+  aiPanaelVisible: boolean = false; 
+  
+  // toggle analysis content visibility
+  analysisContentVisible: boolean = false;
+
+
+
   // track current section
   currentSection: string = 'HOME';
 
-  // backend url
-  url: string = URLS.DASHBOARD;
+  // track aiData
+  aiData!: SummaryAnalysis;
 
-  // backend response accessor
-  responseAccessor: string = 'dashElements';
+  // track userData
+  userData!: UserInputData;
+
+  // track AI content
+  aiPanelContent: string = "";
 
 
 
@@ -77,6 +125,7 @@ export class DashView {
   // point to chat component
   @ViewChild(Chat) chat!: Chat;
   
+
 
   // on load, get dashboard items from backend
   constructor(private http: HttpClient) { }  
@@ -93,14 +142,15 @@ export class DashView {
     this.loadDashboardItems();    
   }
 
+  // ngAfterViewInit(): void {
+  //   // this.widgetPanel.onDropEvent.subscribe((event: CdkDragDrop<string[]>) => {
+  //   //   this.handleDropEvent(event);
+  //   // });
+  // }
 
-  ngAfterViewInit(): void {
-    // this.widgetPanel.onDropEvent.subscribe((event: CdkDragDrop<string[]>) => {
-    //   this.handleDropEvent(event);
-    // });
-  }
 
-  
+  // handlers for events from child components
+  // widget panel functions
   handleDropEvent(event: CdkDragDrop<string[]>) {
     // if drop from widget to dashboard
     const previousContainer = event.previousContainer;
@@ -109,14 +159,15 @@ export class DashView {
       // ... your existing code for handling the drop event in DashView
     }  
   }
-
-
+  // side panel functions
   handleSectionChange(section: string) : void {
     console.log("Directing DashView to section: " + section);
     this.handleSectionDirection(section);
+
+    console.log("Directing Chat to section: " + section);
+    this.chat.configureChat(section);
   }
-
-
+  // chat functions
   handleSectionDirection(section: string) : void {
     console.log("DashView handling direction to: " + section);
 
@@ -137,17 +188,21 @@ export class DashView {
     // reload dashboard items based on new section
     this.loadDashboardItems();    
   }
+  handleMakeDashText (makeDashElementData: MakeDashElementData) : void {
+    console.log("Making new dash text item. Data: " + makeDashElementData);
 
+    // const finalString = [aiResponse, aiAnalysisObject].join('\n\n');
+    // const userAndAIData = JSON.stringify(finalString);
 
-  handleMakeDashText (aiResponse: string) : void {
-    console.log("Making new dash text item.");
+    this.userData = makeDashElementData.user_data;
+    this.aiData = makeDashElementData.ai_data;
 
     const newDashItem : NewDashItem = {
       name: "TextBox",
       icon: "",
       visible: true,
-      title: "Text",
-      data: aiResponse,
+      title: this.aiData.title,
+      data: this.userData.userContent,
     };
 
     // add the new dashboard item to the backend
@@ -157,10 +212,37 @@ export class DashView {
       this.loadDashboardItems();    
     });
 
-
   }
 
 
+
+  // requests to backend
+  getDashItems() : Observable <any> {
+    console.log("Fetching from URL: " + this.url);
+    return this.http.get<any>(this.url);
+  }
+  addDashItem(item: NewDashItem) : Observable <NewDashItem> {
+    return this.http.post<NewDashItem>(this.url, item);
+  }
+  updateDashItems(id: string, updateData: any) : Observable <any> {
+    return this.http.put<any>(`${this.url}/${id}`, updateData);
+  }
+  deleteDashElement(id : string): void {
+    this.http.delete(`${this.url}/${id}`).subscribe((data) => {
+      try{
+        this.loadDashboardItems();
+      }catch{
+        console.error('Error processing delete:', data);
+      }
+    });
+
+    this.deleteMode = false;
+
+    // this.loadDashboardItems();
+  }
+
+
+  // dashboard functions
   configureDashboard(section: string) : void {
     // change backend url and response accessor based on section
     switch (section) {
@@ -197,38 +279,9 @@ export class DashView {
           console.log("No matching section found.");
         break;
     }
-
     console.log("Dash configured to section: " + this.currentSection);
   }
-
-  getDashItems() : Observable <any> {
-    console.log("Fetching from URL: " + this.url);
-    return this.http.get<any>(this.url);
-  }
-
-  addDashItem(item: NewDashItem) : Observable <NewDashItem> {
-    return this.http.post<NewDashItem>(this.url, item);
-  }
-
-  updateDashItems(id: string, updateData: any) : Observable <any> {
-    return this.http.put<any>(`${this.url}/${id}`, updateData);
-  }
-
-  deleteDashElement(id : string): void {
-    this.http.delete(`${this.url}/${id}`).subscribe((data) => {
-      try{
-        this.loadDashboardItems();
-      }catch{
-        console.error('Error processing delete:', data);
-      }
-    });
-
-    this.deleteMode = false;
-
-    // this.loadDashboardItems();
-  }
-
-
+  
   drop(event: CdkDragDrop<string[]>) {
     // if drop is in the same container
     if (event.previousContainer === event.container) {
@@ -262,12 +315,17 @@ export class DashView {
 
   }
 
+  unlockDeleteDashElement(): void {
+    this.deleteMode = !this.deleteMode;
+  }  
+
   loadDashboardItems(): void {
     this.getDashItems().subscribe((data) => {
       try{
 
+        // check if data has entries
         if(data[this.responseAccessor].length > 0) {
-          // Process the data as needed
+          // update local dashboard items list
           this.dashboardItems = data[this.responseAccessor];
         }else {
           console.error('No dashboard items found in the data:', data);
@@ -277,9 +335,20 @@ export class DashView {
         console.error('Error processing dashboard items:', data);
       }
     });
+
+    console.log("Dashboard items loaded.");
+  }
+
+  selectDashElement(id: any): void {
+    // search for the item in dashboardItems and log its data
+    const selectedItem = this.dashboardItems.find(item => item._id === id);
+    if (selectedItem) {
+      console.log('Selected Dashboard Item Data:', selectedItem.data);
+    }
   }
 
 
+  // element functions
   hideDashElement(id: any): void {
     // search for the item in dashboardItems and toggle its visibility (local update)(remap new list with updated value)
     this.dashboardItems = this.dashboardItems.map(item => {
@@ -291,9 +360,7 @@ export class DashView {
   }
 
   saveElementData(id: string, newValue : string): void {
-
     const newData = newValue;
-        
     this.updateDashItems(id, { data: newData }).subscribe((data) => {
       try{
         this.loadDashboardItems();
@@ -301,11 +368,44 @@ export class DashView {
         console.error('Error processing update:', data);
       }
     });
+  }
+
+  hideAIPanel(): void {    
+    // toggle AI panel visibility
+    this.aiPanaelVisible = !this.aiPanaelVisible;
+
+    // if AI panel is hidden, hide other content
+    if(!this.aiPanaelVisible){
+      // Summary 
+      this.analysisContentVisible = false;
+      // other content sections
+      // ...
+    }
+    // if AI panel is shown, and content is empty, show analysis
+    else if (this.aiPanaelVisible && this.aiPanelContent === "") {
+      this.analysisContentVisible = true;
+      this.aiPanelContent = this.aiData.general_response;
+    }
 
   }
 
-  unlockDeleteDashElement(): void {
-    this.deleteMode = !this.deleteMode;
-  }
+  hideAnalysisContent(): void {
 
+    // if AI panel is hidden, show it && summary content
+    if(!this.aiPanaelVisible){
+      this.aiPanaelVisible = true;
+      this.analysisContentVisible = true;
+    }
+    else if(this.analysisContentVisible){
+      this.aiPanaelVisible = false;
+      this.analysisContentVisible = false;
+    }
+
+    this.aiPanelContent = 
+      `AI Summary:
+      ${this.aiData.general_response}
+      `
+    ;
+    
+  }
 }
