@@ -35,35 +35,77 @@
     }
   </div> 
 
+    
+
 
   <!-- widget panel import -->
   <app-widget-panel></app-widget-panel> <!-- widget panel -->      
 
 
-  @for (item of dashboardItems; track item._id) {
-    <div class="dashElement" #textbox_container cdkDrag>
-      <div class="drag-handle" cdkDragHandle>
-        @if(deleteMode) {
-          <button id="delete" (click)="deleteDashElement(item._id)">
-            Delete
-          </button>
-        }
+  @for (item of dashboardItems; track item._id) {   
+  <div class="dashElement" #textbox_container cdkDrag>
+    <div class="drag-handle" cdkDragHandle>
 
-        <span>{{item.title}}</span>
-  
-        <button id="hide" (click)="hideDashElement(item._id)">
-          {{ item.visible ? 'Hide' : 'Show' }}
-        </button>      
-      </div>
+      @if(deleteMode) {
+      <button id="delete" (click)="deleteDashElement(item._id)">
+        Delete
+      </button>
+      }
 
-      @if(item.visible) {
-        <textarea class="userInput" #myTextarea type="text" placeholder="Enter text">{{item.data}}</textarea>
-        <button id="save" (click)="saveElementData(item._id, myTextarea.value)">
-          Save
-        </button>
-  }
+      <span>{{item.title}}</span>
+
+      <button id="hide" (click)="hideDashElement(item._id)">
+        {{ item.visible ? 'Hide' : 'Show' }}
+      </button>     
+      
+      
 
     </div>
+
+    <div class="dash-user-ai-data">
+      
+      <!-- User Panel -->
+      <div class="user-panel">
+        @if(item.visible) {
+        <textarea class="userInput" #myTextarea type="text" placeholder="Enter text">{{item.data}}</textarea>
+        
+        <div class="user-btns">
+          <button id="save" (click)="saveElementData(item._id, myTextarea.value)">
+            Save
+          </button>
+
+          <button class="hide-AI-btn" (click)="hideAIPanel()">
+          {{ aiPanaelVisible ? 'Hide AI' : 'Show AI' }}
+          </button>
+        </div>
+        }
+      </div>
+
+      <!-- AI Analysis Panel-->
+      <div class="ai-panel">
+        <button class="hide-analysis-btn" (click)="hideAnalysisContent()">
+        {{ analysisContentVisible ? '<--' : 'Analysis' }}
+        </button>
+        
+        @if(aiPanaelVisible) {
+        <div class="ai-panel-content">
+          <p>Content: </p>
+          @if(analysisContentVisible) {
+          <p>{{ aiPanelContent }}</p>
+          }
+
+
+        </div>
+        
+        <!-- <p>AI Analysis for {{item.title}}</p> -->
+        <!-- <p>{{item.data}}</p> -->
+          
+        }
+      </div>
+
+    </div>
+
+  </div>
   }
 
 </div>
