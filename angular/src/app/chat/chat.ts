@@ -20,6 +20,32 @@ interface NewMessagePair {
 }
 
 
+interface SummaryAnalysis {
+    title: string
+    general_response: string
+    connections: string
+    lore_summary: string
+    gap_suggestions: string
+    new_idea_suggestions: string
+    logic_conflicts: string
+    user_question_responses: string[];
+}
+
+
+interface UserInputData {
+    section: string;
+    userContent: string;
+    userQueries: string[];
+    last_working_on: string;
+    current_element_content: string;
+}
+
+interface MakeDashElementData {
+  user_data: UserInputData;
+  ai_data: SummaryAnalysis;
+}
+
+
 @Component({
   selector: 'app-chat',
   imports: [],
@@ -32,9 +58,12 @@ export class Chat  {
 
   allMessages : MessagePair[] = [];
 
+  // track user input
   userContent : string = "";
+  
+  // track AI latest response
   lastAIResponse : string = "";
-  canMakeDashText : boolean = false;
+
 
   // track current section
   currentSection: string = 'HOME';
@@ -48,21 +77,52 @@ export class Chat  {
   // backend response accessor
   responseAccessor: string = 'chatElements';
 
-  isLoading = true; // Optional: for indicating chat loading
+  // tracks load state
+  isLoading = false; 
 
-  chatVisible: boolean = true;
+  // chat-response-to-dash-text ability
+  canMakeDashText : boolean = false;
 
+  // chat window visibility
+  chatVisible: boolean = false;
+
+  // messages visibility
+  messagesVisible: boolean = true;
+
+  // notepad visibility
   notepadView: boolean = false;
+
+
+  // track aiData
+  aiData!: SummaryAnalysis;
+  
+  // track userData
+  userData!: UserInputData;
+  
+  
+
+  constructor(private http: HttpClient) { }  
+  ngOnInit(): void {
+    // check if this is a new chat or if its part of an existing chat
+
+    // if (first chat) { auto send first chat saying hi && load chat }
+    // const userContent = "Hi, my name in Ryan";
+
+    // load chat with new messagePair
+    this.updateChat();
+    
+    
+    // else { just load existing chat }
+    // this.updateChat();
+  }
 
 
 
   // create event emitter for section selection
   private onSectionDirection = new EventEmitter<string>();
-
   // make event emitter accessible
   @Output()
   public onSectionDirectionEvent = this.onSectionDirection;
-
   // sends section direction to dashboard
   directToSection(section: string) {
     if(section === 'HOME' || section === 'LORE' || section === 'GAMEPLAY' || section === 'NOVEL' || section === 'SCREENPLAY' || section === 'TIMELINE') {
@@ -73,23 +133,29 @@ export class Chat  {
     }
   }
 
-
-
   // create event emitter for section selection
-  private onMakeDashText = new EventEmitter<string>();
-
+  private onMakeDashText = new EventEmitter<MakeDashElementData>();
   // make event emitter accessible
   @Output()
   public onMakeDashTextEvent = this.onMakeDashText;
+  // tell dash to make a text based on latest AI response
   makeDashText() : void {
     if(this.canMakeDashText && this.currentSection !== 'HOME'){
       console.log("Making dash text:", this.lastAIResponse);
 
+      const makeDashElementData : MakeDashElementData  = {
+        user_data: this.userData,
+        ai_data: this.aiData
+      };
+
       // call make dash function to generate text for dashboard
-      this.onMakeDashText.emit(this.lastAIResponse);
+      this.onMakeDashText.emit(makeDashElementData);
 
       // reset can make dash text
       this.canMakeDashText = false;
+
+      // hide chat view (reveal more dash view)
+      this.chatVisible = false;
 
     }
     else if(!this.canMakeDashText){
@@ -102,61 +168,25 @@ export class Chat  {
 
 
 
-
-  constructor(private http: HttpClient) { }  
-  ngOnInit(): void {
-    // check if this is a new chat or if its part of an existing chat
-
-    // if (first chat) { auto send first chat saying hi && load chat }
-    // const userContent = "Hi, my name in Ryan";
-
-    // load chat with new messagePair
-    this.loadChat();
-    
-    // this.fetchAIResponse(userContent).subscribe({
-    //   next: (response) => { 
-    //     console.log('what came through this time:', response);       
-      
-    //     // load chat with new messagePair
-    //     this.loadChat();
-
-    //   },
-    //   error: (error) => { 
-    //     console.error('Error:', error); 
-    //   },
-    //   // complete: () => { 
-    //   //   console.log('Request completed.'); // (only happens when finite number of emmisions + notify complete + clean up)
-    //   // }
-    // });
-
-    
-    // else { just load existing chat }
-    // this.loadChat();
+  // get all message-pairs from backend
+  getChatItems() : Observable<any> {
+    try {
+      const allMessages = this.http.get<any>(this.url);
+      return allMessages;
+    } catch (error) {
+      console.error("Error fetching chat items:", error);
+      throw error;
+    }    
   }
 
-  // fetch AI response from fastAPI backend
-  fetchAIResponse(userContent: string): Observable<any> {
-    let params = new HttpParams().append('userContent', userContent); // establishing proper query parameters to match fastAPI
-    return this.http.post(this.aiURL, null, { params: params });
-  }
 
-  getChatItems() : Observable <any> {
-    return this.http.get<any>(this.url);
-  }
 
-  // store a new message pair in the database
-  storeMessagePair(userContent: string, aiContent: string) : Observable <NewMessagePair> {
-    const messagePair: NewMessagePair = {
-      userContent: userContent,
-      aiContent: aiContent
-    };
-    return this.http.post<NewMessagePair>(this.url, messagePair);
-  }
-
+  // configure chat based on section (doesnt interact with dashboard)
   configureChat(section: string) : boolean {
 
     console.log("Configuring chat to section: " + section);
-    // change section, ai url, backend url, and response accessor based on section
+    // change section (chat section selector), ai url, backend url, and response accessor based on input
+    const sectionDropdown = document.getElementById('section-select') as HTMLInputElement;
     switch (section) {
 
       case 'HOME':
@@ -164,6 +194,7 @@ export class Chat  {
           this.url = URLS.CHAT;
           this.aiURL = URLS.AI;
           this.responseAccessor = 'chatElements';
+          sectionDropdown.value = 'HOME';
         return true;
 
       case 'GAMEPLAY':
@@ -171,6 +202,7 @@ export class Chat  {
         this.url = URLS.GAMEPLAY_CHAT;
         this.aiURL = URLS.GAMEPLAY_AI;
         this.responseAccessor = 'gameplayChat';
+        sectionDropdown.value = 'GAMEPLAY';
       return true;
 
       case 'LORE':
@@ -178,6 +210,7 @@ export class Chat  {
           this.url = URLS.LORE_CHAT;
           this.aiURL = URLS.LORE_AI;
           this.responseAccessor = 'loreChat';
+          sectionDropdown.value = 'LORE';
         return true;
 
       case 'NOVEL':
@@ -185,6 +218,7 @@ export class Chat  {
           this.url = URLS.NOVEL_CHAT;
           this.aiURL = URLS.NOVEL_AI;
           this.responseAccessor = 'novelChat';
+          sectionDropdown.value = 'NOVEL';
         return true;
 
       case 'SCREENPLAY':
@@ -192,6 +226,7 @@ export class Chat  {
         this.url = URLS.SCREENPLAY_CHAT;
         this.aiURL = URLS.SCREENPLAY_AI;
         this.responseAccessor = 'screenplayChat';
+        sectionDropdown.value = 'SCREENPLAY';
       return true;
 
       case 'TIMELINE':
@@ -199,20 +234,167 @@ export class Chat  {
           this.url = URLS.TIMELINE_CHAT;
           this.aiURL = URLS.TIMELINE_AI;
           this.responseAccessor = 'timelineChat';
+          sectionDropdown.value = 'TIMELINE';
         return true;
 
       default:
-          console.log("No matching section found. Chat more to determine a valid section.");
         return false;
     }
   }
 
-  loadChat(): void {
+  // fetch AI response from fastAPI backend
+  fetchAIResponse(userContent: string, dataObject: any): Observable<any> {
+    
+    // response is loading 
+    this.isLoading = true;
+    console.log("Chat is loading...");
+
+
+    let params;
+    let response;
+
+
+
+    // debugging:
+    // show details
+
+    console.log("aiURL :", this.aiURL);
+    console.log("Data :", dataObject);
+    
+
+    switch (this.currentSection) {
+      case 'LORE':
+        
+        // establish parameters
+        params = new HttpParams();
+
+        // Pass 'dataObject' directly as the body
+        // retireve AI response
+        response = this.http.post(this.aiURL, dataObject, { params: params }).subscribe({
+          next: (response) => {
+            
+            // response is done loading 
+            this.isLoading = false;
+            console.log("Chat is done loading.");
+
+
+            
+            this.canMakeDashText = true;
+
+            return response;
+          },
+          error: (error) => {
+            console.error("Error fetching Lore AI response:", error);
+            throw error;
+          }
+        });
+
+        // // return response
+        // return response;
+        break;
+    
+      default:
+
+        // establish parameters (string as is)
+        params = new HttpParams().append('userContent', userContent); // establishing proper query parameters to match fastAPI
+      
+        // get AI response
+        response = this.http.post(this.aiURL, null, { params: params });
+
+        // return response
+        return response;
+
+    }
+    
+
+    return this.http.post(this.aiURL, dataObject);
+
+    // try {
+    //   // if data is a string...
+    //   if (dataObject.userContent === undefined) {
+    //     console.log("Data object is a string.");
+        
+    //     // establish parameters (string as is)
+    //     const params = new HttpParams().append('userContent', dataObject); // establishing proper query parameters to match fastAPI
+      
+    //     // get AI response
+    //     const response = this.http.post(this.aiURL, null, { params: params });
+
+    //     // return response
+    //     return response;
+    //   }
+    //   // if data is an object...
+    //   else {
+
+    //     console.log("Data is an object.");
+
+    //     // // establish parameters
+    //     // const params = new HttpParams();
+
+    //     // // Pass 'dataObject' directly as the body
+    //     // // retireve AI response
+    //     // const response = this.http.post(this.aiURL, dataObject, { params: params });
+
+    //     // // return response
+    //     // return response;
+
+
+    //     // convert data object to fastAPI object
+    //     // const fastAPIObject = JSON.stringify(dataObject);
+    //     // console.log("fastAPIObject :", fastAPIObject);
+
+
+    //     const requestOptions = {
+    //       method: 'POST',
+    //       headers: {'Content-Type': 'application/json'},
+    //       body: JSON.stringify(dataObject),
+    //       withCredentials: true // Add this line
+    //     };
+
+    //     return this.http.post(this.aiURL, dataObject, requestOptions);
+    //   }
+
+    // } catch (error) {
+    //   console.error("Error fetching AI response:", error);
+    //   throw error;
+    // }
+     
+    
+  
+  }
+
+  // store a new message pair in the database
+  storeMessagePair(userContent: string, aiContent: string) : Observable <NewMessagePair> {
+    try{
+      // create message pair object
+      const messagePair: NewMessagePair = {
+        userContent: userContent,
+        aiContent: aiContent
+      };
+
+      // // post message pair to backend
+      // console.log("Storing message pair @:", this.url);
+
+      return this.http.post<NewMessagePair>(this.url, messagePair);
+    }
+    catch(error){
+      console.error("Error storing message pair:", error);
+      throw error;
+    }
+  }
+
+  // load chat messages into view
+  async updateChat(): Promise<void> {
+    // get all chat items from backend
     this.getChatItems().subscribe((data) => {
+      
       console.log("Loading this chat data:", data);
+      
       try{
+        // map response data to allMessages array (save last AI response for dash text creation)
         if (data[this.responseAccessor].length > 0) {
-          this.allMessages = data[this.responseAccessor];
+          this.allMessages = data[this.responseAccessor].map((item: MessagePair) => item);   
+          this.lastAIResponse = this.allMessages[this.allMessages.length - 1].aiContent;       
         }
         else {
           console.error("No chat data found.");
@@ -223,133 +405,276 @@ export class Chat  {
     }); 
   }
 
-  parentLoadChat(section: string): void {
-    this.currentSection = section;
-    this.loadChat();
-  }
+  // send user input to AI and save message-pair
+  sendAndSaveChat(userContent: string): void {
+
+    try {
+      switch (this.currentSection) {
+
+        // case 'GAMEPLAY':
+
+        // break;
+
+        case 'LORE':
+
+          // prepare extra data for lore analysis
+          let userQueries : string[] = [];
+          const last_working_on = ""
+          let current_element_content = "";
+
+          const newUserInputData : UserInputData = {
+            "section": this.currentSection,
+            "userContent": userContent,
+            "userQueries": userQueries,
+            "last_working_on": last_working_on,
+            "current_element_content": current_element_content
+          };
 
 
+          // show data being sent
+          console.log("Sending to LORE AI. Data:", newUserInputData);
+
+          // sending to '/lore' backend for AI analysis
+          this.fetchAIResponse(newUserInputData.userContent, newUserInputData).subscribe({
+            next: (response) => {
+
+              // expecting <SummaryAnalysis> response
+              console.log("Lore analysis data:", response);
+
+              this.aiData = response as SummaryAnalysis;
+              this.userData = newUserInputData;
 
 
-  // when send button is clicked, update display, then switch to detected section
-  onSend(userContent: string): void {
+              // save message pair
+              this.storeMessagePair(userContent, response['general_response']).subscribe({
+                next: (storedPair : NewMessagePair) => {
+                  console.log('Stored message after Lore analysis: ', storedPair);
+                },
+                error: (error) => {
+                  console.error('Error storing message pair:', error);
+                }
+              });
+     
+            },
+            error: (error) => { 
+              console.error('Error sending user input:', error); 
+            },
+          });
 
-    // clear input field
-    const inputField = document.getElementById('userInput') as HTMLInputElement;
-    inputField.value = '';
 
-    // mark that first message has been sent
-    this.canMakeDashText = true;
+          // console.log("Sending user input to LORE AI: ", newUserInputData);
 
-    // change section based on user section dropdown
-    const sectionSelect = document.getElementById('section-select') as HTMLInputElement;
-    sectionSelect.value = this.currentSection;
+        break;
 
-    // check if user input is a large text
-    if(userContent.length > 500) {
-      console.log("Input over 500 characters.");
-      // send to analysis chat
+        // case 'NOVEL':
+
+        // break;
+
+        // case 'SCREENPLAY':
+
+        // break;
+
+        // case 'TIMELINE':
+
+        // break;
+
+        default:
+
+          // fetch response from ai in selected section
+          this.fetchAIResponse(userContent, "").subscribe({
+            next: (response) => {
+              console.log("Send & Save default response:", response);
+              this.storeMessagePair(userContent, response['response']).subscribe({
+                next: (storedPair : NewMessagePair) => {
+                  console.log('Stored message pair:', storedPair);
+                },
+                error: (error) => {
+                  console.error('Error storing message pair:', error);
+                }
+              });
+
+
+              // chat is finished loading 
+              this.isLoading = false;
+              console.log("Chat is done loading.");
+
+              // enable 'make dash text' button
+              this.canMakeDashText = true;
+            },
+            error: (error) => { 
+              console.error('Error sending user input:', error); 
+            },
+          });
+
+        break;
+      }
+
+
+    } catch (error) {
+      console.error("Error processing AI response for section " + this.currentSection + ":", error);
     }
 
+  }
 
-    // fetch AI response from backend
-    this.fetchAIResponse(userContent).subscribe({
-      next: (response) => { 
-        console.log('AI response after user send:', response); // (update display + log data + perform calculations)
+  // core chat logic when user sends input
+  async chatLogic(userContent: string) : Promise<void> {
 
-        // store message pair (regardless of section change)
-        this.storeMessagePair(userContent, response['response']).subscribe({
-          next: (storedPair : NewMessagePair) => {
-            
-        
-            // if the section remains the same...
-            if(response['section'] == this.currentSection) {
-              console.log("Section unchanged");
+    // if this section is home 
+    if(this.currentSection === 'HOME'){
+      try {
+        // send user input & get AI response
+        console.log("Sending user input to HOME AI...");
+  
+        await this.fetchAIResponse(userContent, "").subscribe({
+          next: (response) => {           
 
-              // load chat with messagePair
-              this.loadChat();
+            // // save message pair
+            // this.storeMessagePair(userContent, response['response']);
 
-              // save last AI response for dash text generation
-              this.lastAIResponse = response['response'];
-            }
-            
             // if the section changes...
-            else{
+            if(response['section'] !== this.currentSection) {
+              console.log("Chat determined new section: " + this.currentSection + " --> " + response['section']);
 
-              // configure chat (if possible) ...
+              // configure new section 
               if(this.configureChat(response['section'])){
+                console.log("Chat configured to new section.");
+              
+                // send user content to new AI + save message pair
+                console.log("Sending user content to new section AI and saving message pair.");
+                
+                console.log("content :", userContent);                
+                this.sendAndSaveChat(userContent);
 
-                // load chat from new section
-                this.loadChat();
+                // // update chat
+                // this.updateChat();
 
-                // direct dashboard to desired section
-                this.directToSection(response['section']);
+                // enable send button - chat finished loading
+                // this.isLoading = false;
+                
+                // // direct dashboard
+                // this.directToSection(response['section']);
 
-                // get response from ai in new section
-                console.log("using: " + storedPair);
+                // // enable 'make dash text' button
+                // this.canMakeDashText = true;
 
-                this.fetchAIResponse(userContent).subscribe({
-                  next: (newResponse) => { 
-                    
-                    // save new message pair to database
-                    this.storeMessagePair(userContent, newResponse['response']).subscribe({
-                      next: (newStoredPair : NewMessagePair) => {
+                // show end of chat logic
+                console.log("End of chat logic for section change.");
 
-                        console.log('Stored new message pair after section switch:', newStoredPair);
+              }
+              // if configuration was unsuccessful
+              else{
 
-                        // load new chat with new messagePair
-                        this.loadChat();
+                console.log("No matching section found. Chat more to determine a valid section.");
 
-                        // save last AI response for dash text generation
-                        this.lastAIResponse = newResponse['response'];
-                      },
-
-                      error: (error) => {
-                        console.error('Error storing message pair:', error);
-                      }
-                    });
+                // save message pair
+                this.storeMessagePair(userContent, response['response']).subscribe({
+                  next: (storedPair : NewMessagePair) => {
+                    console.log('Stored message pair:', storedPair);
 
                   },
-
-                  error: (error) => { 
-                    console.error('Error:', error); 
-                  },
+                  error: (error) => {
+                    console.error('Error storing message pair:', error);
+                  }
                 });
 
+                // update chat
+                this.updateChat();
 
-                console.log("At end of switching into new section and loading new chat with transfered response. Will direct dashboard.");
-
-                // // direct dashboard to desired section 
-                // this.directToSection(response['section']);
-                // console.log("From chat: chat & dashboard configured to section :: " + this.currentSection);
-                
+                // enable send button - chat finished loading
+                this.isLoading = false;
               }
-
-              // if section not configurable...
-              else{
-                console.log("Section undetectable. Chat more to get a valid section.");
-              }
-
             }
+            // if section didnt change...
+            else{
+              console.log("Section did not change.");
 
+              // send user content to new AI + save message pair
+              this.sendAndSaveChat(userContent);
+
+              // update chat
+              this.updateChat();
+            }
+            
           },
           error: (error) => { 
-            console.error('Error:', error); 
+            console.error('Error sending user input:', error); 
           },
         });
 
-      },
-      error: (error) => { 
-        console.error('Error:', error); 
-      },
-      // complete: () => { 
-      //   console.log('Request completed.'); // (only happens when finite number of emmisions + notify complete + clean up)
-      // }
-    });
+
+      } catch (error) {
+        console.error("Error sending user input:", error);
+      }
+    }
+
+    // if section is not home
+    else{
+      // send to ai + save message pair
+      this.sendAndSaveChat(userContent);
+
+      // update chat
+      this.updateChat();
+
+      // // enable 'make dash text' button
+      // this.canMakeDashText = true;
+    }
+
+
+
   }
+
+  // when send button is clicked, update display, then switch to detected section
+  async onSend(userContent: string): Promise<void> {
+    // SETUP
+
+    // get input field
+    const inputField = document.getElementById('userInput') as HTMLInputElement;
+
+    // check if input empty
+    if(userContent.trim() === '') {
+      console.error("Input is empty. Please enter a message.");
+      return;
+    }
+
+    // clear input field
+    inputField.value = '';
+
+    // configure section to user choice from html dropdown 
+    const sectionSelect = document.getElementById('section-select') as HTMLInputElement;
+    const userSectionSelection = sectionSelect.value;
+    console.log("User selected section:", userSectionSelection);
+    this.configureChat(userSectionSelection);
+
+    let userContentLong: boolean = false;
+
+    // check user input length
+    if(userContent.length > 500) {
+      console.log("Input over 500 characters.");
+      userContentLong = true;
+    }
+    
+
+
+    // CORE LOGIC
+    try{
+      console.log("Waiting for chat to return...");
+      await this.chatLogic(userContent);
+    }catch(error){
+      console.error("Error in chat logic:", error);
+    }
+
+    // chat 'finished loading' is found inside block above
+
+  }
+
+
 
   hideChat() : void {
     this.chatVisible = !this.chatVisible;
+  }
+
+  toggleMessagesView() : void {
+    this.messagesVisible = !this.messagesVisible;
   }
 
   toggleNotePad() : void {
