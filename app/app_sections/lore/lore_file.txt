@@ -1,70 +1,127 @@
-
-
-
-
-
-this is the lore database (json)
-
-
 {
-  "worldName": "Aethelgard",
-  "characters": [
+  "universeName":"Kaj"
+  "worlds":[
     {
-      "id": "C001",
-      "name": "Elara Meadowlight",
-      "role": "Protagonist",
-      "class": "Ranger",
-      "stats": { "strength": 12, "dexterity": 16, "intelligence": 10 },
-      "inventory": ["I002", "I004"], // References item IDs
-      "currentLocation": "L002" // References location ID
+      "worldName": "Xorkii",
+      "characters": [
+        {
+          "id": "C000",
+          "name": "Template Character",
+          "element":""
+          "class": "",
+          "abilities":["", ""], 
+          "stats": { "A": 0, "B": 0, "C": 0 },
+          "inventory": ["", ""], 
+          "currentLocation": "", 
+        },
+        {
+          "id": "C001",
+          "name": "Fal’Jera",
+          "element":"Light"
+          "class": "Diety",
+          "abilities":[ ], 
+          "stats": {  },
+          "inventory": [ ], 
+          "currentLocation": "L001", 
+        },
+        {
+          "id": "C002",
+          "name": "Karmedus",
+          "element":"Darkness"
+          "class": "Diety",
+          "abilities":[ ], 
+          "stats": {  },
+          "inventory": [ ], 
+          "currentLocation": "L002", 
+        },
+      ],
+      "items": [
+        { 
+          "id": "I000",
+          "name": "Template Item",
+          "type": "",
+          "description": "",
+          "effects": { 
+            "A": "", 
+            "B": 0, 
+            "C":["", ""],
+          }
+        },          
+        { 
+          "id": "I001",
+          "name": "Titan Vessel",
+          "type": "Artifact",
+          "description": "A hard shell, empty of essence.",
+          "effects": { 
+            "": "", 
+            "": 0, 
+            "":["", ""],
+            "activate":"add 1 titan" 
+          }
+        },          
+      ],
+      "locations": [
+        {
+          "id": "L000",
+          "name": "Template Location",
+          "type": "",
+          "description": "",
+          "connections": [""] 
+        },
+        {
+          "id": "L001",
+          "name": "Fal’Jera's Dimension",
+          "type": "Celestial",
+          "description": "The space/time in Fal'Jera's control",
+          "connections": [ ]
+        },
+        {
+          "id": "L002",
+          "name": "Karmedus's Dimension",
+          "type": "Celestial",
+          "description": "The space/time in Karmedus's control",
+          "connections": [ ]
+        },
+        {
+          "id": "L003",
+          "name": "Xorkii", // Midori The Core
+          "type": "World",
+          "description": "The first world made by Fal'Jhera and Karmedus.",
+          "connections": ["L001", "L002"]
+        },
+      ],
+      "events": [
+        {
+          "id": "E000",
+          "name":"Template Event",
+          "time": 0, 
+          "location": ["", ""], 
+          "occurrences": "",
+          "characters": ["", ""],
+          "items": ["", ""],
+          "triggers": ["", ""], 
+        },
+        {
+          "id": "E001",
+          "name":"The First Worlds",
+          "time": 0, 
+          "location": ["L001", "L002"], 
+          "occurrences": "Fal’Jera and Karmedus created their own worlds and creations.",
+          "characters": ["C001", "C002"],
+          "items": [ ],
+          "triggers": [ ], 
+        },
+        {
+          "id": "E002",
+          "name":"",
+          "time": 0, 
+          "location": ["L001", "L002"], 
+          "occurrences": "Fal’Jera and Karmedus created Midori the core (Xorkii).",
+          "characters": ["", ""],
+          "items": ["", ""],
+          "triggers": ["", ""], 
+        },
+      ]
     }
-  ],
-  "items": [
-    {
-      "id": "I001",
-      "name": "Sunstone Amulet",
-      "type": "Accessory",
-      "description": "Glows with warm light.",
-      "effects": { "defense": 2, "magic_resist": 1 }
-    },
-    {
-      "id": "I002",
-      "name": "Iron Sword",
-      "type": "Weapon",
-      "damage": 5,
-      "durability": 100
-    }
-  ],
-  "locations": [
-    {
-      "id": "L001",
-      "name": "Whispering Woods",
-      "type": "Forest",
-      "description": "Ancient, eerie woods.",
-      "connections": ["L002"] // Links to other locations
-    },
-    {
-      "id": "L002",
-      "name": "Oakhaven Village",
-      "type": "Town",
-      "description": "A peaceful village.",
-      "connections": ["L001"]
-    }
-  ],
-  "events": [
-      {
-      "id": "E001",
-      "name":"The Dragon's Arrival",
-      "time": 52, // float type that indicates year
-      "location": ["City of E", "Tower of R"], // list of locations
-      "occurrences": "Detailed description of what happens during the event",
-      "characters": ["C001"], // Can list character/NPC IDs
-      "items": ["Item X", "Item Y"],
-      "triggers": ["C001 reaches Oakhaven", "I001 is used"], // list of precedding occurrances that lead to this event
-      },
-      // ... more events
   ]
-}
-
-
-
+}, 
