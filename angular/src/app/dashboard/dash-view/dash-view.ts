@@ -39,7 +39,7 @@ interface UserInputData {
   current_element_content: string;
 }
 
-interface SummaryAnalysis {
+interface AIAnalysisData {
   title: string
   general_response: string
   connections: string
@@ -52,10 +52,8 @@ interface SummaryAnalysis {
 
 interface MakeDashElementData {
   user_data: UserInputData
-  ai_data: SummaryAnalysis
+  ai_data: AIAnalysisData
 }
-
-
 
 
 
@@ -87,32 +85,44 @@ export class DashView {
 
 
 
-  // delete mode toggle
+  // track delete mode
   deleteMode: boolean = false;
 
   // backend response accessor
   responseAccessor: string = 'dashElements';
 
-
-  // toggle AI panel visibility
-  aiPanaelVisible: boolean = false; 
-  
-  // toggle analysis content visibility
-  analysisContentVisible: boolean = false;
-
-
-
   // track current section
   currentSection: string = 'HOME';
 
+  // track user input
+  userInput: string = "";
+
   // track aiData
-  aiData!: SummaryAnalysis;
+  aiData!: AIAnalysisData;
 
   // track userData
   userData!: UserInputData;
 
-  // track AI content
+  // track AI panel visibility
+  aiPanaelVisible: boolean = false; 
+  // track AI section & content & visibility
+  aiPanelContentVisible: boolean = false;
+  aiPanelSection: string = "";
   aiPanelContent: string = "";
+
+  // track selected dash element
+  selectedDashElementId: string = "";
+
+  // track list of ai data 
+  listOfAIData: { [key: string]: AIAnalysisData } = {};
+
+  // track if new analysis generated
+  newAnalysisGenerated: boolean = false;
+  // track new analysis data
+  newAnalysisData: string = "";
+
+  // track can commit to record
+  canComitToRecord: boolean = true;
 
 
 
@@ -194,22 +204,33 @@ export class DashView {
     // const finalString = [aiResponse, aiAnalysisObject].join('\n\n');
     // const userAndAIData = JSON.stringify(finalString);
 
+    // track user and ai data
     this.userData = makeDashElementData.user_data;
     this.aiData = makeDashElementData.ai_data;
 
+    // create an object that holds user and ai data
+    const allData ={
+      "user_content": this.userData.userContent,
+      "ai_analysis": this.aiData
+    };
+
+    // stringify the object
+    const JSONData: string = JSON.stringify(allData)
+
+    // create new dashboard item with all data
     const newDashItem : NewDashItem = {
       name: "TextBox",
       icon: "",
-      visible: true,
+      visible: false,
       title: this.aiData.title,
-      data: this.userData.userContent,
+      data: JSONData,
     };
 
     // add the new dashboard item to the backend
     this.addDashItem(newDashItem).subscribe((response) => {
       console.log('Dashboard item added:', response);
       // Refresh the dashboard items list to include the newly added item
-      this.loadDashboardItems();    
+      this.loadDashboardItems();
     });
 
   }
@@ -320,13 +341,52 @@ export class DashView {
   }  
 
   loadDashboardItems(): void {
+    
+    // request dashboard items from backend
     this.getDashItems().subscribe((data) => {
       try{
+        console.log('Dashboard url+accessor:', this.url, '+', this.responseAccessor);
 
         // check if data has entries
         if(data[this.responseAccessor].length > 0) {
           // update local dashboard items list
-          this.dashboardItems = data[this.responseAccessor];
+          // this.dashboardItems = data[this.responseAccessor];
+
+          // map incoming data to Dashboard Items
+          console.log('Mapping dash items...');
+
+
+          // debugging
+          // track new data separately
+          // const parsedData = JSON.parse('{user content: "test", ai_analysis: {title: "test title"}}');
+          // console.log("Parsed data: ", parsedData);
+
+          // store ai-data in list
+          // this.listOfAIData[item._id] = parsedData.ai_analysis;
+
+
+
+          // this needs to happen after all data is loaded
+          this.dashboardItems = data[this.responseAccessor].map((item: DashboardItem) => {
+            
+            // track new data separately
+            const parsedData = JSON.parse(item.data? item.data : '{}');
+
+            // store ai-data in list
+            if(parsedData.ai_analysis) {
+              this.listOfAIData[item._id] = parsedData.ai_analysis;
+            }else{
+              console.log(item.data);
+            }
+            
+            return {
+              ...item, 
+              visible: false,
+            };
+          });
+
+
+
         }else {
           console.error('No dashboard items found in the data:', data);
           this.dashboardItems = [];
@@ -339,29 +399,114 @@ export class DashView {
     console.log("Dashboard items loaded.");
   }
 
-  selectDashElement(id: any): void {
-    // search for the item in dashboardItems and log its data
-    const selectedItem = this.dashboardItems.find(item => item._id === id);
-    if (selectedItem) {
-      console.log('Selected Dashboard Item Data:', selectedItem.data);
-    }
+  selectDashElement(id: string): void {
+    // set selected element id
+    this.selectedDashElementId = id;
+    console.log('Selected Dashboard Item ID:', this.selectedDashElementId);
+    
   }
 
 
   // element functions
   hideDashElement(id: any): void {
+            
     // search for the item in dashboardItems and toggle its visibility (local update)(remap new list with updated value)
     this.dashboardItems = this.dashboardItems.map(item => {
       if (item._id === id) {
         return { ...item, visible: !item.visible };
       }
+      console.log("Toggled visibility for item ID: " + id + " to " + item.visible);
       return item;
     });
+
+        
+    // find the item to update
+    const itemToUpdate = this.dashboardItems.find(item => item._id === id);
+    
+    // after toggle, if visible, show data
+    if(itemToUpdate?.visible === true){
+
+      // decode item data and set element content
+      // ...
+      this.userInput = JSON.parse(itemToUpdate.data?itemToUpdate.data:"").user_content.trim();
+    
+    }
+    else{
+      console.log("Element data hidden.");
+    }
+  }
+  async toggleAIPanel(): Promise<void> {    
+    // toggle AI panel visibility
+    this.aiPanaelVisible = !this.aiPanaelVisible;
+  }
+  toggleAnalysisContent(analysisType: string): void {
+
+    // toggle analysis content visibility
+    this.aiPanelContentVisible = !this.aiPanelContentVisible;
+    
+    // if analysis content is hidden, clear contents
+    if(!this.aiPanelContentVisible){
+      console.log("Hiding analysis content.");
+      this.aiPanelContent = "";
+      this.aiPanelSection = "";
+      return;
+    }
+    // if analysis content is showing, display correct content
+    else {
+      console.log("Opening analysis content.");
+      switch (analysisType) {
+        case 'general_summary':
+            this.aiPanelContent = this.listOfAIData[this.selectedDashElementId].general_response;
+            this.aiPanelSection = 'General Summary';
+          break;
+        case 'connections':
+            this.aiPanelContent = this.listOfAIData[this.selectedDashElementId].connections;
+            this.aiPanelSection = 'Connections';
+          break;
+        case 'lore_summary':
+            this.aiPanelContent = this.listOfAIData[this.selectedDashElementId].lore_summary;
+            this.aiPanelSection = 'Lore Summary';
+          break;
+        case 'gap_suggestions':
+            this.aiPanelContent = this.listOfAIData[this.selectedDashElementId].gap_suggestions;
+            this.aiPanelSection = 'Gap Suggestions';
+          break;
+        case 'new_idea_suggestions':
+            this.aiPanelContent = this.listOfAIData[this.selectedDashElementId].new_idea_suggestions;
+            this.aiPanelSection = 'New Idea Suggestions';
+          break;
+        case 'user_question_responses':
+            this.aiPanelContent = 'user question responses...';
+            this.aiPanelSection = 'User Question Responses';
+          break;
+        default:
+            console.log(`Cant find --${analysisType}-- type found.`);
+          break;
+      }
+    }
+
   }
 
-  saveElementData(id: string, newValue : string): void {
-    const newData = newValue;
-    this.updateDashItems(id, { data: newData }).subscribe((data) => {
+  saveElementData(id: string, userContent: string): void {
+    
+    // start save process
+    console.log("Saving element data...");
+
+
+    // find the item to update
+    // const itemToUpdate = this.dashboardItems.find(item => item._id === id);
+
+    // create an object that holds user and ai-data
+    const allData = {
+      "user_content": userContent,
+      "ai_analysis": this.listOfAIData[id]
+    };
+
+    // stringify the object
+    const JSONData: string = JSON.stringify(allData);
+
+    // update data for element in database
+    this.updateDashItems(id, { data: JSONData }).subscribe((data) => {
       try{
         this.loadDashboardItems();
       }catch{
@@ -369,43 +514,59 @@ export class DashView {
       }
     });
   }
+  comitToRecord(id: string): void {
+    console.log("Comitting element to record...");
 
-  hideAIPanel(): void {    
-    // toggle AI panel visibility
-    this.aiPanaelVisible = !this.aiPanaelVisible;
+    // get user input
+    const targetItem = this.dashboardItems.find(item => item._id === id);
+    const commitData = JSON.parse(targetItem?.data?targetItem.data:"").user_content.trim();
 
-    // if AI panel is hidden, hide other content
-    if(!this.aiPanaelVisible){
-      // Summary 
-      this.analysisContentVisible = false;
-      // other content sections
-      // ...
-    }
-    // if AI panel is shown, and content is empty, show analysis
-    else if (this.aiPanaelVisible && this.aiPanelContent === "") {
-      this.analysisContentVisible = true;
-      this.aiPanelContent = this.aiData.general_response;
-    }
-
-  }
-
-  hideAnalysisContent(): void {
-
-    // if AI panel is hidden, show it && summary content
-    if(!this.aiPanaelVisible){
-      this.aiPanaelVisible = true;
-      this.analysisContentVisible = true;
-    }
-    else if(this.analysisContentVisible){
-      this.aiPanaelVisible = false;
-      this.analysisContentVisible = false;
-    }
-
-    this.aiPanelContent = 
-      `AI Summary:
-      ${this.aiData.general_response}
-      `
-    ;
+    // commit to backend and retrieve confirmation string (success/fail)
+    const response = this.http.post<string>('http://127.0.0.1:8000/lore-commit', commitData);
+    // show results
+    console.log("Commitment results: ", response);
     
   }
+
+
+  // analysis functions
+  generateNewAnalysis(analysisType: string): void {
+    console.log(`Generating new ${analysisType}..."`);
+    // call backend to generate new summary
+    // newAnalysisData = this.http.get<any>(this.url);
+    // store new summary
+    // this.newAnalysisData = newAnalysisData;
+    
+    // set flag to show new analysis available
+    this.newAnalysisGenerated = true;
+  
+  }
+  acceptNewAnalysis(id : string): void {
+    console.log(`Accepting new analysis for item ID: ${id}..."`);
+    
+    // enable ability to generate new analysis
+    this.newAnalysisGenerated = false;
+    
+    // update aiData for the item
+    // this.listOfAIData[id].general_response = this.newAnalysisData;
+
+    // save updated data to backend
+    // this.saveElementData(id, this.userInput);
+  
+  }
+  prevAnalysis(): void {
+    console.log("Reverting to previous analysis...");
+    
+    // enable ability to generate new analysis
+    this.newAnalysisGenerated = false;
+    
+    // logic to view previous analysis
+    // clear new analysis data
+    // this.newAnalysisData = "";
+  }
+
+
+
+
+
 }
