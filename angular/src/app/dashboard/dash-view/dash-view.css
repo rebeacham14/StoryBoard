@@ -105,8 +105,16 @@
   background: white;
   cursor: grab;
 
-  min-width: 150px;
+  min-width: 300px;
 
+  resize: both;
+
+}
+
+
+.selectedElement {
+  border: 2px solid #b678f0;
+  box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
 }
 
 .drag-handle {
@@ -128,10 +136,13 @@
 }
 
 
-.dashElement input {
-  border: none;
-  width: 100%;
-  box-sizing: border-box;
+#hide{
+  cursor: pointer;
+  font-size: 0.8rem;
+  background-color: rgb(128, 128, 128);
+  color: rgb(255, 255, 255);
+
+  margin-left: 10px;
 }
 
 .dash-user-ai-data {
@@ -156,21 +167,78 @@
   padding-right: 10px;
 }
 
+.userInput {
+  /* border: none; */
+  min-width: 300px;
+  /* box-sizing: border-box; */
+}
+
 .user-btns {
   display: flex;
   gap: 10px;
   margin-top: 5px;
 }
 
+#save{
+  cursor: pointer;
 
+  background-color: rgb(143, 118, 189);
+  color: white;
+
+  padding: 5px 10px;
+
+  border: none;
+  border-radius: 5px;
+  
+  transition: opacity 0.3s ease
+}
+#save:hover {
+    opacity: 0.5; 
+}
 
 
 .ai-panel {
-  position: absolute;
-  left: 100%;
+  display: flex;
 
-  margin-left: 5px;
-  padding-left: 5px;
-  /* border-left: 2px solid #ccc; */
+  /* min-width: 300px; */
+
+  font-size: 0.8rem;
+
+  min-width: 250px;
+
+  margin: 0 20px 0 10px;
+  padding-left: 10px;
+  border-left: 2px solid #ccc;
+
   /* flex: 1; */
+}
+
+.ai-btns{
+  display: flex;
+  flex-direction: column;
+  margin: 10px;
+}
+
+.ai-analysis-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+.toggle-analysis-btn {
+  cursor: pointer;
+
+  background-color: rgb(143, 118, 189);
+  color: rgb(0, 0, 0);
+
+  padding: 5px 10px;
+
+  margin: 5px 0;
+
+  border: none;
+  border-radius: 5px;
+  
+  transition: opacity 0.3s ease
+}
+.toggle-analysis-btn:hover {
+    opacity: 0.5; 
 }
