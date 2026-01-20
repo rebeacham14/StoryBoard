@@ -2,7 +2,6 @@
 
 <app-chat (onSectionDirectionEvent)="handleSectionDirection($event)" (onMakeDashTextEvent)="handleMakeDashText($event)"></app-chat> <!-- chat panel -->
 
-
 <div class="all-dashboard-container">
   
   <div class="current-section-title">
@@ -35,15 +34,11 @@
     }
   </div> 
 
-    
-
-
   <!-- widget panel import -->
   <app-widget-panel></app-widget-panel> <!-- widget panel -->      
 
-
   @for (item of dashboardItems; track item._id) {   
-  <div class="dashElement" #textbox_container cdkDrag>
+  <div class="dashElement" #textbox_container cdkDrag [class.selectedElement]="item._id === selectedDashElementId" (click)="selectDashElement(item._id)">
     <div class="drag-handle" cdkDragHandle>
 
       @if(deleteMode) {
@@ -58,52 +53,101 @@
         {{ item.visible ? 'Hide' : 'Show' }}
       </button>     
       
-      
-
     </div>
-
+    @if(item.visible) {
     <div class="dash-user-ai-data">
       
       <!-- User Panel -->
       <div class="user-panel">
-        @if(item.visible) {
-        <textarea class="userInput" #myTextarea type="text" placeholder="Enter text">{{item.data}}</textarea>
+        <textarea class="userInput" #myTextarea type="text" placeholder="Enter text">
+          {{ userInput }}
+        </textarea>
         
         <div class="user-btns">
           <button id="save" (click)="saveElementData(item._id, myTextarea.value)">
             Save
           </button>
 
-          <button class="hide-AI-btn" (click)="hideAIPanel()">
-          {{ aiPanaelVisible ? 'Hide AI' : 'Show AI' }}
+          @if(item._id === selectedDashElementId){
+            <button class="hide-AI-btn" (click)="toggleAIPanel()">
+            {{ aiPanaelVisible ? 'Hide AI' : 'Show AI' }}
+            </button>
+          }
+
+          <button class="commit-to-record-btn" (click)="comitToRecord(item._id)" [disabled]="!canComitToRecord">
+          Commit to Record
           </button>
+                    
+          
         </div>
-        }
+        
       </div>
 
       <!-- AI Analysis Panel-->
-      <div class="ai-panel">
-        <button class="hide-analysis-btn" (click)="hideAnalysisContent()">
-        {{ analysisContentVisible ? '<--' : 'Analysis' }}
-        </button>
-        
-        @if(aiPanaelVisible) {
-        <div class="ai-panel-content">
-          <p>Content: </p>
-          @if(analysisContentVisible) {
-          <p>{{ aiPanelContent }}</p>
+      <!-- if dash item is selected, show AI panel -->
+      @if(item._id === selectedDashElementId){
+        @if(aiPanaelVisible){
+        <div class="ai-panel">
+          <div class="ai-btns">
+            @if(aiPanelContentVisible){
+              <button class="toggle-analysis-btn" (click)="toggleAnalysisContent('')">
+              &#8592; 
+              </button>
+            }
+            @else{
+              <button class="toggle-analysis-btn" (click)="toggleAnalysisContent('general_summary')">
+              General Summary
+              </button>
+              <button class="toggle-analysis-btn" (click)="toggleAnalysisContent('connections')">
+              Connections
+              </button>
+              <button class="toggle-analysis-btn" (click)="toggleAnalysisContent('lore_summary')">
+              Lore Summary
+              </button>
+              <button class="toggle-analysis-btn" (click)="toggleAnalysisContent('gap_suggestions')">
+              Gap Suggestions
+              </button>
+              <button class="toggle-analysis-btn" (click)="toggleAnalysisContent('new_idea_suggestions')">
+              New Idea Suggestions
+              </button>
+              <button class="toggle-analysis-btn" (click)="toggleAnalysisContent('user_question_responses')">
+              User Question Responses
+              </button>
+            }
+          </div>
+
+          @if(aiPanelContentVisible){
+          <div class="ai-panel-content">
+            <p>{{ aiPanelSection }}: </p>
+            <p>
+              {{ aiPanelContent }}
+            </p>          
+
+            <div class="ai-analysis-btns">
+              @if(newAnalysisGenerated) {
+              <button class="prev-analysis-btn" (click)="prevAnalysis()">
+                Previous
+              </button>
+            
+              <button class="accept-analysis-btn" (click)="acceptNewAnalysis(item._id)">
+                Accept New
+              </button>
+              }
+              @else{
+              <button class="new-analysis-btn" (click)="generateNewAnalysis('summary')">
+                Generate New
+              </button>
+              }
+            </div>
+
+          </div>
           }
-
-
         </div>
-        
-        <!-- <p>AI Analysis for {{item.title}}</p> -->
-        <!-- <p>{{item.data}}</p> -->
-          
         }
-      </div>
+      }
 
     </div>
+    }
 
   </div>
   }
