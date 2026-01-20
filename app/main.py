@@ -27,6 +27,12 @@ import json
 
 import sys
 import os
+from functools import lru_cache
+
+
+import asyncio
+
+
 
 # models' systems & instructions
 import model_systems
@@ -75,6 +81,7 @@ Do not add any introductory or explanatory text outside the JSON.
 analyzer_system = """
 You are an expert content analyzer. 
 Your task is to analyze input, compare against the master record_file, and provide structured feedback detailing key components and elements.
+YOU MUST, strictly, output a single string object.
 """
 
 ###############################
@@ -88,7 +95,7 @@ class AssistantResponse(BaseModel):
 class AnalyzerResponse(BaseModel):
     response: str
 
-class SummaryAnalysis(BaseModel):
+class AIAnalysisData(BaseModel):
     title: str
     general_response: str
     connections: str
@@ -120,8 +127,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+client = ollama.AsyncClient()
 
-def getLoreText() -> str:
+
+@lru_cache(maxsize=1)
+def getLoreText_cached() -> str:
     lore_txt = ""
     
     # extract txt from record_file as lore_txt
@@ -137,9 +147,10 @@ def getLoreText() -> str:
 
 
 
-def analyze_input(input: str, use_record_file: bool, direction: str) -> str:
-    
-    lore_txt = getLoreText()
+# analyzes input based on direction and record_file usage
+async def analyze_input_async(input: str, use_record_file: bool, direction: str) -> str:
+        
+    lore_txt = getLoreText_cached()
     
     # add instructions with user input
     if(input == ""):
@@ -149,9 +160,8 @@ def analyze_input(input: str, use_record_file: bool, direction: str) -> str:
     else:
         final_input = f"{direction} :: {input} :record_file: {lore_txt}"
     
-
     # feed model the final input
-    response = ollama.chat(
+    response = await client.chat(
         model="mistral", 
         options={"temperature": 0.2}, 
         messages=[
@@ -160,6 +170,7 @@ def analyze_input(input: str, use_record_file: bool, direction: str) -> str:
         ], 
         format=AnalyzerResponse.model_json_schema(), # Pass the Pydantic schema here
     )
+
     try:
         # ollama response
         response_data = AnalyzerResponse.model_validate_json(response['message']['content'])
@@ -172,13 +183,11 @@ def analyze_input(input: str, use_record_file: bool, direction: str) -> str:
     except json.JSONDecodeError as e:
         print(f"Failed to decode JSON: {e}")
 
-
-def summary_analysis(userContent_summaries: list, record_file_summaries: list, userInputData: UserInputData) -> SummaryAnalysis:
+# creates an object containing data analyzing input & lore
+async def summary_analysis_async(userContent_summaries: list, record_file_summaries: list, userInputData: UserInputData) -> AIAnalysisData:
 
     # get the element the user was last working on
-    last_working_on = userInputData.last_working_on
-
-
+    # last_working_on = userInputData.last_working_on
 
     # transform userContent_summaries into single text
     combined_userContent_summaries = " ".join(userContent_summaries)
@@ -190,27 +199,6 @@ def summary_analysis(userContent_summaries: list, record_file_summaries: list, u
     # track answers to user questions
     user_question_responses = []
 
-    # create a title based on the user content
-    topic_title = analyze_input(userInputData.userContent, False, "Provide a concise title summarizing the main topic of this input.")
-
-    # [ general analysis of entire user input ]
-    general_response = analyze_input(userInputData.userContent, False, "Provide a 100 word concise summary of this input. Relate it to the lore.")
-
-    # return connections between current text element summaries
-    connections = analyze_input(combined_userContent_summaries, True, "Illustrate connections between user input and the lore.")
-    
-    # returns summary of lore
-    lore_summary = analyze_input("", True, "Summarize the lore in 100 words; strictly what is in the lore only. Provide feedback regarding key elements.")
-
-    # returns suggestions to fill in gaps in lore
-    gap_suggestions = analyze_input("", True, "Suggest gaps in the lore that need filling for consistency.")
-    
-    # returns suggestions to start new ideas to expand lore
-    new_idea_suggestions = analyze_input("", True, "Suggest new ideas to expand the lore")
-
-    # returns conflicts in logic within the lore
-    logic_conflicts = analyze_input("", True, "Identify conflicts and holes within the lore.")
-
     # for each question, adds response[str] (based on the lore) to list of responses
     # try:
     #     for question in userInputData.userQueries:
@@ -221,20 +209,48 @@ def summary_analysis(userContent_summaries: list, record_file_summaries: list, u
     #     return None
     
 
-    return SummaryAnalysis(
-        title= topic_title,
+    # make list of AI calls
+    tasks = [
+        # create a title based on the user content
+        analyze_input_async(userInputData.userContent, False, "Provide a concise title, less than 10 words, summarizing the main topic of this input."),
+        # [ general analysis of entire user input ]
+        analyze_input_async(userInputData.userContent, False, "Provide a 100 word concise summary of this input. Relate it to the lore."),
+        # return connections between current text element summaries
+        analyze_input_async(combined_userContent_summaries, True, "Illustrate connections between user input and the lore."),
+        # returns summary of lore
+        analyze_input_async("", True, "Summarize the lore in 100 words; strictly what is in the lore only. Provide feedback regarding key elements."),
+        # returns suggestions to fill in gaps in lore
+        analyze_input_async("", True, "Suggest gaps in the lore that need filling for consistency."),
+        # returns suggestions to start new ideas to expand lore
+        analyze_input_async("", True, "Suggest new ideas to expand the lore"),
+        # returns conflicts in logic within the lore
+        analyze_input_async("", True, "Identify conflicts and holes within the lore.")
+    ]
+    # This runs all LLM calls at the same time
+    results = await asyncio.gather(*tasks)
+    
+    # unpack results 
+    title= results[0]
+    general_response=results[1]
+    connections=results[2]
+    lore_summary=results[3]
+    gap_suggestions=results[4]
+    new_idea_suggestions=results[5]
+    logic_conflicts=results[6]
+
+    return AIAnalysisData(
+        title= title,
         general_response = general_response,
-        connections = connections,
-        lore_summary = lore_summary,
-        gap_suggestions = gap_suggestions,
-        new_idea_suggestions = new_idea_suggestions,
-        logic_conflicts = logic_conflicts,
-        user_question_responses = ["response_1", "response_2"],
+        connections=connections,
+        lore_summary=lore_summary,
+        gap_suggestions=gap_suggestions,
+        new_idea_suggestions=new_idea_suggestions,
+        logic_conflicts=logic_conflicts,
+        user_question_responses=["response_1", "response_2"]
     )
 
-
 # breaks down large text into list of smaller summaries
-def digest_input(text: str, chunk_size = 3000) -> list:
+async def digest_input(text: str, chunk_size = 3000) -> list:
     # track the blocks of text to analyze
     list_of_chunks = []
 
@@ -255,31 +271,27 @@ def digest_input(text: str, chunk_size = 3000) -> list:
 
     # for each chunk, get summary and add to list_of_summaries
     for chunk in list_of_chunks:
-        summary = analyze_input(chunk, False, "provide a 1000 character concise summary of the following text")
+        summary = await analyze_input_async(chunk, False, "provide a 1000 character concise summary of the following text")
         list_of_summaries.append(summary)
 
     return list_of_summaries
 
-
-
-
-
-
 # analyzes and returns object with helpful insight
-def lore_check(userInputData: UserInputData) -> SummaryAnalysis:
+async def lore_check(userInputData: UserInputData) -> AIAnalysisData:
 
 
     # debugging
 
-    lore_txt = getLoreText()
+    lore_txt = getLoreText_cached()
 
     print(userInputData.userContent)
     
     # large text broken down into list of smaller summaries
     # [ userContent ]
-    userContent_summaries = digest_input(userInputData.userContent)
+    userContent_summaries = await digest_input(userInputData.userContent)
     # [ record_file ]
-    record_file_summaries = digest_input(lore_txt)
+    # record_file_summaries = digest_input(lore_txt)
+    record_file_summaries = []
 
 
     # - AI takes both lists of summaries and returns:
@@ -290,10 +302,10 @@ def lore_check(userInputData: UserInputData) -> SummaryAnalysis:
     # [ suggestions to start new idea ]
     # [ conflicts in logic ]
     # [ response to user questions ]
-    new_SummaryAnalysis_object = summary_analysis(userContent_summaries, record_file_summaries, userInputData)
+    new_AIAnalysisData_object = await summary_analysis_async(userContent_summaries, record_file_summaries, userInputData)
 
 
-    # summary_analysis = SummaryAnalysis (        
+    # summary_analysis = AIAnalysisData (        
     #     general_response = general_analysis,
     #     connections = "connections",
     #     lore_summary = "lore_summary",
@@ -303,7 +315,7 @@ def lore_check(userInputData: UserInputData) -> SummaryAnalysis:
     #     user_question_responses = ["response1", "response2"]
     # )
 
-    return new_SummaryAnalysis_object
+    return new_AIAnalysisData_object
 
 
 
@@ -331,11 +343,9 @@ def lore_check(userInputData: UserInputData) -> SummaryAnalysis:
     # # [ suggestions to start new idea ]
     # # [ conflicts in logic ]
     # # [ response to user questions ]
-    # # new_SummaryAnalysis_object = summary_analysis(userContent_summaries, record_file_summaries, userInputData)
+    # # new_AIAnalysisData_object = summary_analysis(userContent_summaries, record_file_summaries, userInputData)
 
-    # # return new_SummaryAnalysis_object
-
-
+    # # return new_AIAnalysisData_object
 
 
 
@@ -397,8 +407,6 @@ def generate(userContent: str):
         print("direction unclear. try again.")
         return ("direction unclear. try again.")
     
-
-
 @app.post("/gameplay")
 def generate(userContent: str):
 
@@ -450,10 +458,8 @@ def generate(userContent: str):
         print("direction unclear. try again.")
         return ("direction unclear. try again.")
     
-
-
 @app.post("/lore")
-def generate(userInputData: UserInputData):
+async def generate(userInputData: UserInputData):
 
     print("Received userInputData:", userInputData)
 
@@ -466,7 +472,7 @@ def generate(userInputData: UserInputData):
         case 'lore':
             print("lore analysis...")
             # perform lore check analysis with user input data
-            final_analysis = lore_check(userInputData)
+            final_analysis = await lore_check(userInputData)
             pass
         case 'novel':   
             print("novel analysis...")
@@ -490,6 +496,14 @@ def generate(userInputData: UserInputData):
     # debugging
     return final_analysis
 
+@app.post("/lore-commit")
+def commit_lore_analysis(userInput: str):
+    # find what the user is trying to commit
+    commitment_instructions = analyze_input_async(userInput, False, "Extract the characters, items, locations, and events from the user's input; based on the input, respond with a valid JSON object that contains each. Use keys: character, item, location, event. Each key contains a list of objects with relevant details. Only respond with the JSON object; do not include any additional text.")
+    
+    # Process the analysis data and commit to the lore database
+    print("--|" + commitment_instructions)
+    return "commitment_instructions"
 
 @app.post("/novel")
 def generate(userContent: str):
