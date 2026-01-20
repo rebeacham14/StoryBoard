@@ -20,7 +20,7 @@ interface NewMessagePair {
 }
 
 
-interface SummaryAnalysis {
+interface AIAnalysisData {
     title: string
     general_response: string
     connections: string
@@ -42,7 +42,7 @@ interface UserInputData {
 
 interface MakeDashElementData {
   user_data: UserInputData;
-  ai_data: SummaryAnalysis;
+  ai_data: AIAnalysisData;
 }
 
 
@@ -60,6 +60,9 @@ export class Chat  {
 
   // track user input
   userContent : string = "";
+
+  // track if user content is long
+  userContentLong: boolean = false;
   
   // track AI latest response
   lastAIResponse : string = "";
@@ -94,7 +97,7 @@ export class Chat  {
 
 
   // track aiData
-  aiData!: SummaryAnalysis;
+  aiData!: AIAnalysisData;
   
   // track userData
   userData!: UserInputData;
@@ -140,30 +143,41 @@ export class Chat  {
   public onMakeDashTextEvent = this.onMakeDashText;
   // tell dash to make a text based on latest AI response
   makeDashText() : void {
-    if(this.canMakeDashText && this.currentSection !== 'HOME'){
-      console.log("Making dash text:", this.lastAIResponse);
 
-      const makeDashElementData : MakeDashElementData  = {
-        user_data: this.userData,
-        ai_data: this.aiData
-      };
-
-      // call make dash function to generate text for dashboard
-      this.onMakeDashText.emit(makeDashElementData);
-
-      // reset can make dash text
-      this.canMakeDashText = false;
-
-      // hide chat view (reveal more dash view)
-      this.chatVisible = false;
-
+    // check if there is information in lore analysis
+    if(!this.aiData) {
+      console.log("No lore analysis data found. Cannot make dash text.");
     }
-    else if(!this.canMakeDashText){
-      console.log("First message not sent yet. Cannot make dash text.");
+    else{
+
+      if(this.canMakeDashText && this.currentSection !== 'HOME'){
+        console.log("Making dash text...");
+
+        const makeDashElementData : MakeDashElementData  = {
+          user_data: this.userData,
+          ai_data: this.aiData
+        };
+
+        // call make dash function to generate text for dashboard
+        this.onMakeDashText.emit(makeDashElementData);
+
+        // reset can make dash text
+        this.canMakeDashText = false;
+
+        // hide chat view (reveal more dash view)
+        this.chatVisible = false;
+
+      }
+      else if(!this.canMakeDashText){
+        console.log("First message not sent yet. Cannot make dash text.");
+      }
+      else if(this.currentSection === 'HOME'){
+        console.log("Choose a section before making a dashboard item.");
+      }
     }
-    else if(this.currentSection === 'HOME'){
-      console.log("Choose a section before making a dashboard item.");
-    }
+
+
+
   }
 
 
@@ -181,12 +195,24 @@ export class Chat  {
 
 
 
+  // configure chat section dropdown
+  selectSectionDropdown(section: string) {
+    const sectionDropdown = document.getElementById('section-select') as HTMLInputElement;
+    if (sectionDropdown) {
+      sectionDropdown.value = section;
+    }
+    else {
+      console.error("Section dropdown not found.");
+    }
+  }
+
   // configure chat based on section (doesnt interact with dashboard)
   configureChat(section: string) : boolean {
 
     console.log("Configuring chat to section: " + section);
     // change section (chat section selector), ai url, backend url, and response accessor based on input
-    const sectionDropdown = document.getElementById('section-select') as HTMLInputElement;
+    // const sectionDropdown = document.getElementById('section-select') as HTMLInputElement;
+      
     switch (section) {
 
       case 'HOME':
@@ -194,7 +220,7 @@ export class Chat  {
           this.url = URLS.CHAT;
           this.aiURL = URLS.AI;
           this.responseAccessor = 'chatElements';
-          sectionDropdown.value = 'HOME';
+          this.selectSectionDropdown('HOME');
         return true;
 
       case 'GAMEPLAY':
@@ -202,15 +228,15 @@ export class Chat  {
         this.url = URLS.GAMEPLAY_CHAT;
         this.aiURL = URLS.GAMEPLAY_AI;
         this.responseAccessor = 'gameplayChat';
-        sectionDropdown.value = 'GAMEPLAY';
+        this.selectSectionDropdown('GAMEPLAY');
       return true;
 
       case 'LORE':
-          this.currentSection = section;
+        this.currentSection = section;
           this.url = URLS.LORE_CHAT;
           this.aiURL = URLS.LORE_AI;
           this.responseAccessor = 'loreChat';
-          sectionDropdown.value = 'LORE';
+          this.selectSectionDropdown('LORE');
         return true;
 
       case 'NOVEL':
@@ -218,7 +244,7 @@ export class Chat  {
           this.url = URLS.NOVEL_CHAT;
           this.aiURL = URLS.NOVEL_AI;
           this.responseAccessor = 'novelChat';
-          sectionDropdown.value = 'NOVEL';
+          this.selectSectionDropdown('NOVEL');
         return true;
 
       case 'SCREENPLAY':
@@ -226,7 +252,7 @@ export class Chat  {
         this.url = URLS.SCREENPLAY_CHAT;
         this.aiURL = URLS.SCREENPLAY_AI;
         this.responseAccessor = 'screenplayChat';
-        sectionDropdown.value = 'SCREENPLAY';
+        this.selectSectionDropdown('SCREENPLAY');
       return true;
 
       case 'TIMELINE':
@@ -234,7 +260,7 @@ export class Chat  {
           this.url = URLS.TIMELINE_CHAT;
           this.aiURL = URLS.TIMELINE_AI;
           this.responseAccessor = 'timelineChat';
-          sectionDropdown.value = 'TIMELINE';
+          this.selectSectionDropdown('TIMELINE');
         return true;
 
       default:
@@ -253,15 +279,7 @@ export class Chat  {
     let params;
     let response;
 
-
-
-    // debugging:
-    // show details
-
-    console.log("aiURL :", this.aiURL);
-    console.log("Data :", dataObject);
-    
-
+    // check current section for proper request format
     switch (this.currentSection) {
       case 'LORE':
         
@@ -273,9 +291,6 @@ export class Chat  {
         response = this.http.post(this.aiURL, dataObject, { params: params }).subscribe({
           next: (response) => {
             
-            // response is done loading 
-            this.isLoading = false;
-            console.log("Chat is done loading.");
 
 
             
@@ -438,17 +453,25 @@ export class Chat  {
           this.fetchAIResponse(newUserInputData.userContent, newUserInputData).subscribe({
             next: (response) => {
 
-              // expecting <SummaryAnalysis> response
+              // expecting <AIAnalysisData> response
               console.log("Lore analysis data:", response);
 
-              this.aiData = response as SummaryAnalysis;
+              this.aiData = response as AIAnalysisData;
               this.userData = newUserInputData;
 
-
+              // after AI responds...
               // save message pair
               this.storeMessagePair(userContent, response['general_response']).subscribe({
                 next: (storedPair : NewMessagePair) => {
                   console.log('Stored message after Lore analysis: ', storedPair);
+
+                  // response is done loading 
+                  this.isLoading = false;
+                  console.log("Chat is done loading.");
+
+                  // enable 'make dash text' button
+                  this.canMakeDashText = true;
+
                 },
                 error: (error) => {
                   console.error('Error storing message pair:', error);
@@ -537,12 +560,13 @@ export class Chat  {
 
               // configure new section 
               if(this.configureChat(response['section'])){
+                this.directToSection(response['section']);
                 console.log("Chat configured to new section.");
               
                 // send user content to new AI + save message pair
                 console.log("Sending user content to new section AI and saving message pair.");
-                
-                console.log("content :", userContent);                
+                // console.log("content :", userContent);                
+
                 this.sendAndSaveChat(userContent);
 
                 // // update chat
@@ -645,12 +669,11 @@ export class Chat  {
     console.log("User selected section:", userSectionSelection);
     this.configureChat(userSectionSelection);
 
-    let userContentLong: boolean = false;
 
     // check user input length
     if(userContent.length > 500) {
       console.log("Input over 500 characters.");
-      userContentLong = true;
+      this.userContentLong = true;
     }
     
 
